@@ -832,18 +832,6 @@ function generateWhitelistScoped(root){ const q=(s)=> find(root, s); const text 
 function previewWhitelistScoped(root){ const q=(s)=> find(root, s); const text = q('#wlList')?.value||''; const gen = !!q('#wlGenUuid')?.checked; const entries = buildWhitelistFromText(text, gen); const json = JSON.stringify(entries.map(e=>({uuid:e.uuid, name:e.name})), null,2); const out = q('#wlOut'); if(out) out.textContent = json; }
 function copyWhitelistScoped(root){ const q=(s)=> find(root, s); const out = q('#wlOut'); if(!out) return; const text = out.textContent || ''; if(!text) return; navigator.clipboard?.writeText(text).then(()=>{ if(root===document) alert('Whitelist JSON copied'); }, ()=>{ if(root===document) alert('Copy failed'); }); }
 
-function readLitematic(){
-    readLitematicScoped(document);
-}
-
-function readLitematicScoped(root){
-    const q = (sel)=> find(root, sel);
-    const file = q('#schematic')?.files?.[0];
-    const out = q('#litematicOut');
-    if(!file){ if(out) out.innerHTML = 'No file selected'; return; }
-    if(out) out.innerHTML = `Loaded:<br>${file.name}<br><br>A full NBT parser can be added here to extract exact materials.`;
-}
-
 // --- Ticks to seconds converter ---
 function ticksToSeconds(){ ticksToSecondsScoped(document); }
 function ticksToSecondsScoped(root){ const q=(s)=> find(root, s); const val = Number(q('#ticksInput')?.value || 0); const seconds = val / 20; const out = q('#ticksOut'); if(out) out.innerHTML = `${val} ticks = ${seconds} seconds`; }
