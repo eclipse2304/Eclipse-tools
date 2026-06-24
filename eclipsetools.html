@@ -1,0 +1,1634 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<meta charset="UTF-8">
+<title>Eclipse Minecraft Tools</title>
+
+<style>
+
+:root{
+    --bg:#090909;
+    --card:#181420;
+    --purple:#8f82c7;
+    --light:#b8a7e5;
+    --gold:#cda47d;
+    --text:#eeeeee;
+}
+
+*{
+    box-sizing:border-box;
+}
+
+body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:Arial, Helvetica, sans-serif;
+}
+
+header{
+    text-align:center;
+    padding:30px;
+    border-bottom:2px solid var(--purple);
+}
+
+header{ position:relative; }
+
+#resetPageBtn{
+    position:absolute;
+    right:16px;
+    top:16px;
+    padding:8px 12px;
+    background:var(--gold);
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+#sidebarToggleBtn{
+    position:absolute;
+    left:16px;
+    top:16px;
+    padding:8px 12px;
+    background:var(--purple);
+    color:black;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+body.sidebar-collapsed #sidebar{
+    transform: translateX(-100%);
+    opacity: 0;
+    pointer-events: none;
+}
+
+body.sidebar-collapsed .container{
+    margin-left:0;
+    width:100%;
+}
+
+#sidebar{
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.sidebar-highlight{
+    animation: sidebar-highlight 1.2s ease-in-out;
+    box-shadow: 0 0 0 3px rgba(143,130,199,0.3);
+}
+
+@keyframes sidebar-highlight{
+    0% { background: rgba(143,130,199,0.15); }
+    100% { background: transparent; }
+}
+
+.logo{ width:140px; }
+
+h1{ color:var(--light); }
+
+.container{
+    /* allow the container to fill the available page width (accounting for sidebar)
+       so each row stretches to fit the page width-wise */
+    max-width: none;
+    width: calc(100% - 200px);
+    margin-left:200px;
+    padding:25px;
+    display:grid;
+    /* two calculators per row; each min 320px, expand evenly */
+    grid-template-columns:repeat(2,minmax(320px,1fr));
+    gap:20px;
+}
+
+.card{
+    background:var(--card);
+    border-radius:15px;
+    padding:20px;
+    border:1px solid var(--purple);
+    box-shadow:0 0 20px #000;
+}
+
+/* special full-width pinned circle card */
+.circle-card{
+    /* placeholder class retained for compatibility; when used in the grid it spans full width */
+    grid-column: 1 / -1;
+}
+
+@media (max-width: 760px){
+    .container{ grid-template-columns: 1fr; }
+}
+
+/* windowed calculators */
+.window{
+    position:absolute;
+    background:var(--card);
+    border:1px solid var(--purple);
+    border-radius:10px;
+    box-shadow:0 8px 30px rgba(0,0,0,0.6);
+    min-width:280px;
+    min-height:80px;
+    overflow:visible;
+}
+.win-header{
+    padding:8px 10px;
+    background:linear-gradient(90deg, rgba(143,130,199,0.08), transparent);
+    color:var(--light);
+    cursor:move;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    border-top-left-radius:10px;
+    border-top-right-radius:10px;
+}
+.win-title{ font-weight:bold; font-size:14px; }
+.win-controls{ display:flex; gap:6px; align-items:center }
+.win-content{ padding:12px; }
+.resizer{ position:absolute; right:6px; bottom:6px; width:12px; height:12px; cursor:se-resize; background:transparent }
+
+/* left sidebar */
+#sidebar{
+    position:fixed;
+    left:0; top:0; bottom:0;
+    width:180px;
+    background:#0b0b0b;
+    border-right:1px solid rgba(143,130,199,0.12);
+    padding:12px 8px;
+    overflow:auto;
+    z-index:1200;
+}
+#sidebar h3{ color:var(--light); margin:6px 4px }
+#sidebar button{ display:block; width:100%; margin:6px 0; text-align:left; background:transparent; color:var(--text); border:1px solid rgba(143,130,199,0.08); padding:8px; border-radius:6px }
+#sidebar button:hover{ background:rgba(143,130,199,0.06) }
+
+/* shift page content to the right to make room for the sidebar */
+.container{ margin-left:200px; }
+
+.card h2{ color:var(--light); }
+
+/* center a standalone tools card and limit its width */
+.other-tools{
+    max-width:900px;
+    margin:18px auto;
+    padding:20px;
+    box-sizing:border-box;
+}
+
+input{
+    width:100%;
+    padding:10px;
+    margin:5px 0;
+    background:#0c0a10;
+    color:white;
+    border:1px solid var(--purple);
+    border-radius:6px;
+}
+
+.potion-visual{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:10px;
+    color:#ddd;
+    font-size:14px;
+}
+.potion-visual span{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    background:rgba(143,130,199,0.08);
+    border:1px solid rgba(143,130,199,0.18);
+    padding:8px 10px;
+    border-radius:8px;
+}
+
+button{
+    margin-top:10px;
+    padding:10px 15px;
+    background:var(--purple);
+    color:black;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+button:hover{ background:var(--gold); }
+
+.info-tooltip{
+    display:inline-block;
+    margin-left:6px;
+    width:18px;
+    height:18px;
+    line-height:18px;
+    text-align:center;
+    border-radius:50%;
+    background:rgba(255,255,255,0.12);
+    color:var(--text);
+    font-size:12px;
+    cursor:help;
+}
+
+.output{
+    margin-top:15px;
+    background:#0c0a10;
+    padding:12px;
+    border-radius:8px;
+    color:var(--gold);
+    min-height:30px;
+}
+
+footer{ text-align:center; padding:20px; color:#777; }
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+<img class="logo" src="Eclipse_Logo_Large_nobg.png" alt="Eclipse Logo">
+<h1>🌙 Eclipse Minecraft Tools</h1>
+<p>Minecraft calculators in one place</p>
+    <button id="sidebarToggleBtn" onclick="toggleSidebar()">☰ Tools</button>
+    <button id="resetPageBtn" onclick="resetPage()">Reset</button>
+</header>
+
+<!-- Sidebar for listing/opening calculators -->
+<div id="sidebar">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+        <h3 style="margin:0;">Calculators</h3>
+        <button id="sidebarCloseBtn" onclick="toggleSidebar()" style="margin-top:0;padding:6px 10px;font-size:12px;">Hide</button>
+    </div>
+    <div id="sidebarList"></div>
+</div>
+
+<div class="container">
+
+    <div class="card">
+        <h2>🌌 Nether Portal Calculator</h2>
+        <input id="ox" placeholder="Overworld X">
+        <input id="oz" placeholder="Overworld Z">
+        <button onclick="nether()">Overworld → Nether</button>
+        <div class="output" id="netherOut"></div>
+
+        <hr>
+
+        <input id="nx" placeholder="Nether X">
+        <input id="nz" placeholder="Nether Z">
+        <button onclick="overworld()">Nether → Overworld</button>
+        <div class="output" id="overOut"></div>
+    </div>
+
+    <div class="card">
+        <h2>🧱 Chunk Calculator</h2>
+        <input id="bx" placeholder="Block X">
+        <input id="bz" placeholder="Block Z">
+        <button onclick="chunk()">Find Chunk</button>
+        <div class="output" id="chunkOut"></div>
+    </div>
+
+    <!-- Circle Builder moved to the bottom so it spans full width -->
+
+    <div class="card">
+        <h2>⭐ XP Calculator</h2>
+        <input id="current" placeholder="Current Level">
+        <input id="goal" placeholder="Target Level">
+        <button onclick="xp()">Calculate XP</button>
+        <div class="output" id="xpOut"></div>
+    </div>
+
+    <div class="card">
+        <h2>🔮 Beacon Beam Color</h2>
+        <p>Enter a color or choose one from the wheel to find the nearest Minecraft stained glass for a beacon beam.</p>
+        <label style="display:block; margin-top:8px">Color: <input id="beaconColorPicker" type="color" value="#3ab3da" style="margin-left:8px; width:auto; vertical-align:middle;" oninput="document.getElementById('beaconHexInput').value = this.value.toUpperCase()"></label>
+        <input id="beaconHexInput" placeholder="#RRGGBB" value="#3AB3DA">
+        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:8px;">
+            <button onclick="beaconColorLookup()">Find glass color</button>
+            <button onclick="beaconColorComboLookup()">Find best up to 8 layers</button>
+        </div>
+        <div class="output" id="beaconColorOut"></div>
+        <div class="output" id="beaconComboOut" style="margin-top:8px;"></div>
+    </div>
+
+    <div class="card">
+        <h2>�️ Whitelist Generator</h2>
+        <p>Paste one player per line. Optionally use "name,uuid" per line. Leave UUID empty to auto-generate deterministic offline-style UUIDs.</p>
+        <textarea id="wlList" placeholder="one player per line\nor: name,uuid" style="width:100%;height:110px;padding:10px;background:#0c0a10;color:white;border:1px solid var(--purple);border-radius:6px"></textarea>
+        <label style="display:block;margin-top:8px"><input type="checkbox" id="wlGenUuid"> Generate deterministic UUIDs for names without UUIDs</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;align-items:center">
+            <button onclick="generateWhitelist()">Generate & Download</button>
+            <button onclick="previewWhitelist()">Preview</button>
+            <button onclick="lookupUuids()">Lookup UUIDs (Mojang)</button>
+            <button onclick="clearUuidCache()">Clear UUID Cache</button>
+            <button onclick="copyWhitelist()">Copy JSON</button>
+        </div>
+        <div class="output" id="wlOut" style="white-space:pre-wrap;font-family:monospace;overflow:auto;max-height:180px"></div>
+    </div>
+
+    <div class="card">
+        <h2>�📐 Litematica Materials</h2>
+        <p>Upload a .litematic file</p>
+        <input type="file" id="schematic" accept=".litematic">
+        <button onclick="readLitematic()">Read File</button>
+        <div class="output" id="litematicOut"></div>
+    </div>
+
+    <div class="card">
+        <h2>🗺 Coordinate Tips</h2>
+        <p>Overworld → Nether:<br> X ÷ 8<br> Z ÷ 8</p>
+        <p>Chunks:<br> Block coordinate ÷ 16</p>
+        <p>Portal linking works best with matching coordinates.</p>
+    </div>
+
+    <div class="card">
+        <h2>⏱ Ticks ↔ Seconds</h2>
+        <p>Convert between Minecraft ticks and seconds (20 ticks = 1 second). Use either field and click the corresponding button.</p>
+        <input id="ticksInput" placeholder="Ticks (e.g. 100)">
+        <div style="display:flex;gap:8px;align-items:center">
+            <button onclick="ticksToSeconds()">Ticks → Seconds</button>
+            <div style="width:8px"></div>
+            <input id="secondsInput" placeholder="Seconds (e.g. 5)">
+            <button onclick="secondsToTicks()">Seconds → Ticks</button>
+        </div>
+        <div class="output" id="ticksOut"></div>
+    </div>
+
+    <div class="card">
+        <h2>🧱 Hopper Clock Converter</h2>
+        <p>Estimate seconds from number of items in a basic item-hopper clock. Adjust ticks-per-item if you use a different transfer setup.</p>
+        <input id="hopperItems" placeholder="Items in clock (e.g. 64)">
+        <input id="hopperTicksPerItem" placeholder="Ticks per item (default 8)" value="8">
+        <button onclick="hopperToSeconds()">Convert</button>
+        <div class="output" id="hopperOut"></div>
+    </div>
+
+    <div class="card">
+        <h2>📜 Enchantment Planner</h2>
+        <p>Enter desired enchantments one per line, optionally as "Name:Level". The planner will validate names/levels and flag common incompatibilities.</p>
+        <textarea id="enchantList" placeholder="Sharpness:5\nUnbreaking:3" style="width:100%;height:120px;padding:10px;background:#0c0a10;color:white;border:1px solid var(--purple);border-radius:6px"></textarea>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;align-items:center">
+            <button onclick="planEnchantments()">Plan</button>
+            <button onclick="copyEnchantPlan()">Copy Summary</button>
+        </div>
+        <div class="output" id="enchantOut" style="white-space:pre-wrap;font-family:monospace;overflow:auto;max-height:220px"></div>
+    </div>
+
+    <div class="card">
+        <h2>🧪 Potion Recipe Generator</h2>
+        <p>Select a potion and choose modifiers to show brewing steps.</p>
+        <label style="display:block; margin-top:8px;">Potion:
+            <select id="potionType" onchange="updatePotionVisual()" style="width:100%; padding:10px; margin-top:5px; background:#0c0a10; color:white; border:1px solid var(--purple); border-radius:6px">
+                <option value="awkward">Awkward Potion</option>
+                <option value="thick">Thick Potion</option>
+                <option value="mundane">Mundane Potion</option>
+                <option value="night_vision">Potion of Night Vision</option>
+                <option value="invisibility">Potion of Invisibility</option>
+                <option value="fire_resistance">Potion of Fire Resistance</option>
+                <option value="water_breathing">Potion of Water Breathing</option>
+                <option value="healing">Potion of Healing</option>
+                <option value="regeneration">Potion of Regeneration</option>
+                <option value="strength">Potion of Strength</option>
+                <option value="swiftness">Potion of Swiftness</option>
+                <option value="slowness">Potion of Slowness</option>
+                <option value="leaping">Potion of Leaping</option>
+                <option value="turtle_master">Potion of Turtle Master</option>
+                <option value="slow_falling">Potion of Slow Falling</option>
+                <option value="poison">Potion of Poison</option>
+                <option value="harming">Potion of Harming</option>
+                <option value="weakness">Potion of Weakness</option>
+            </select>
+        </label>
+        <div class="potion-visual" id="potionVisual"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center">
+            <label><input type="checkbox" id="potionStrong"> Strong</label>
+            <label><input type="checkbox" id="potionLong"> Long</label>
+            <label><input type="checkbox" id="potionSplash"> Splash</label>
+            <label><input type="checkbox" id="potionLingering"> Lingering</label>
+        </div>
+        <button onclick="generatePotionRecipe()">Generate Recipe</button>
+        <div class="output" id="potionOut" style="white-space:pre-wrap;font-family:monospace;overflow:auto;max-height:220px"></div>
+    </div>
+
+    <div class="card circle-card" id="circleCard">
+        <h2>⚪ Circle Builder</h2>
+        <p>Enter a radius (blocks) or width &amp; height (blocks) to build a circle/ellipse.</p>
+        <input id="circleRadius" placeholder="Radius (leave blank to use width/height)">
+        <input id="circleWidth" placeholder="Width (blocks, optional)">
+        <input id="circleHeight" placeholder="Height (blocks, optional)">
+        <label style="display:block;margin-top:8px">
+            <input type="checkbox" id="circleFilled"> Filled (check = filled, uncheck = outline)
+        </label>
+        <button onclick="drawCircle()">Draw</button>
+        <div style="margin-top:10px; text-align:center">
+            <div id="circleWrap" style="width:360px; height:360px; max-width:1200px; aspect-ratio:1/1; border:1px solid var(--purple); margin:0 auto;">
+                <canvas id="circleCanvas" style="display:block;"></canvas>
+            </div>
+            <div style="display:flex;justify-content:center;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap">
+                <button id="circleFullscreen" onclick="toggleFullscreen()">Fullscreen</button>
+                <button onclick="zoomOut()">-</button>
+                <input id="circleZoom" type="range" min="0.25" max="3" step="0.05" value="1" style="width:160px" oninput="onZoomChange()">
+                <button onclick="zoomIn()">+</button>
+                <div style="font-size:12px;color:var(--light)">Zoom: <span id="zoomLabel">100%</span></div>
+                <button onclick="drawCircle()">Redraw</button>
+            </div>
+        </div>
+    <!-- textual block list removed; coordinates shown on graph instead -->
+    </div>
+</div>
+
+    <div class="card other-tools">
+        <h2>🛠 Other cool Minecraft tools</h2>
+        <p>Handy external sites and tools for building, schematics, and pixel art.</p>
+        <ul style="line-height:1.5;margin-top:8px">
+            <li><a href="https://objtoschematic.com" target="_blank" rel="noopener">objtoschematic.com</a> — Convert 3D models (.obj) into Minecraft schematics you can import into your world.</li>
+            <li><a href="https://www.mcpaintings.com" target="_blank" rel="noopener">mcpaintings.com</a> — Create custom Minecraft paintings or pixel-art canvases from images.</li>
+            <li><a href="https://alternatives.microcontrollers.dev/latest/essential/" target="_blank" rel="noopener">alternatives.microcontrollers.dev</a> — A curated directory of useful alternatives and tools (handy for finding resources and similar projects).</li>
+            <li><a href="https://www.minecraft-schematics.com" target="_blank" rel="noopener">minecraft-schematics.com</a> — Large library of community-submitted schematics and builds to browse and download.</li>
+            <li><a href="https://www.plotz.co.uk" target="_blank" rel="noopener">plotz.co.uk</a> — Classic circle, sphere and ellipsoid generators for planning builds and blueprints.</li>
+            <li><a href="https://iamcal.github.io/enchant-order/" target="_blank" rel="noopener">iamcal.github.io/enchant-order</a> — Visualize enchantment ordering and compatibility (handy when planning enchanted gear or books).</li>
+            <li><a href="https://misode.github.io" target="_blank" rel="noopener">misode.github.io</a> — A collection of small Minecraft tools, experiments and utilities created by the community.</li>
+        </ul>
+    </div>
+
+</div>
+
+<footer>
+    Eclipse Minecraft Tools Made by ketchuhp, Logo by mooncrown
+</footer>
+
+<script>
+
+function getRoot(root){ return root || document; }
+function find(root, selector){ return getRoot(root).querySelector(selector); }
+function normalizeHexCode(value){
+    if(!value) return '';
+    const hex = value.trim().replace(/^#/, '');
+    return hex.length === 3 ? hex.split('').map(ch => ch + ch).join('') : hex;
+}
+function formatHexCode(value){
+    const hex = normalizeHexCode(value);
+    return hex ? '#' + hex.toUpperCase() : '';
+}
+
+function nether(){
+    // kept for backward compatibility
+    netherScoped(document);
+}
+
+// Reset the page to its initial state (reload). This clears spawned windows and resets UI.
+function resetPage(){
+    window.location.reload();
+}
+
+function netherScoped(root){
+    const q = (sel)=> find(root, sel);
+    const x = Number(q('#ox')?.value || 0);
+    const z = Number(q('#oz')?.value || 0);
+    const out = q('#netherOut');
+    if(out) out.innerHTML = `Nether Coordinates:<br>X: ${Math.round(x/8)}<br>Z: ${Math.round(z/8)}`;
+}
+
+function overworld(){
+    overworldScoped(document);
+}
+
+function overworldScoped(root){
+    const q = (sel)=> find(root, sel);
+    const x = Number(q('#nx')?.value || 0);
+    const z = Number(q('#nz')?.value || 0);
+    const out = q('#overOut');
+    if(out) out.innerHTML = `Overworld Coordinates:<br>X: ${x*8}<br>Z: ${z*8}`;
+}
+
+function chunk(){
+    chunkScoped(document);
+}
+
+function chunkScoped(root){
+    const q = (sel)=> find(root, sel);
+    const x = Math.floor(Number(q('#bx')?.value || 0)/16);
+    const z = Math.floor(Number(q('#bz')?.value || 0)/16);
+    const out = q('#chunkOut'); if(out) out.innerHTML = `Chunk:<br>${x}, ${z}`;
+}
+
+function xp(){
+    xpScoped(document);
+}
+
+function xpScoped(root){
+    const q = (sel)=> find(root, sel);
+    const a = Number(q('#current')?.value || 0);
+    const b = Number(q('#goal')?.value || 0);
+    let total = 0;
+    for(let i = a; i < b; i++){
+        if(i < 16) total += 2*i + 7;
+        else if(i < 31) total += 5*i - 38;
+        else total += 9*i - 158;
+    }
+    // Provide breakdowns for common XP sources
+    // Assumptions (can be tuned):
+    // - Enderman: 5 XP per kill (base 5)
+    // - Nether Quartz Ore: average ~3.5 XP per break (range 2-5, 3.5 avg)
+    const xpPerEnderman = 5;
+    const xpPerQuartz = 3.5;
+    const endermenNeeded = Math.ceil(total / xpPerEnderman);
+    const quartzNeeded = Math.ceil(total / xpPerQuartz);
+
+    const out = q('#xpOut');
+    if(out){
+        out.innerHTML = `${total} XP needed<br>` +
+            `≈ ${endermenNeeded} Enderman kills (≈${xpPerEnderman} XP each)<br>` +
+            `≈ ${quartzNeeded} Nether quartz ore breaks (≈${xpPerQuartz} XP each)`;
+    }
+}
+
+const BEACON_BEAM_GLASS_COLORS = [
+    {name:'White', glass:'White Stained Glass', hex:'#F9FFFE'},
+    {name:'Orange', glass:'Orange Stained Glass', hex:'#F9801D'},
+    {name:'Magenta', glass:'Magenta Stained Glass', hex:'#C74EBD'},
+    {name:'Light Blue', glass:'Light Blue Stained Glass', hex:'#3AB3DA'},
+    {name:'Yellow', glass:'Yellow Stained Glass', hex:'#FED83D'},
+    {name:'Lime', glass:'Lime Stained Glass', hex:'#80C71F'},
+    {name:'Pink', glass:'Pink Stained Glass', hex:'#F38BAA'},
+    {name:'Gray', glass:'Gray Stained Glass', hex:'#474F52'},
+    {name:'Light Gray', glass:'Light Gray Stained Glass', hex:'#9D9D97'},
+    {name:'Cyan', glass:'Cyan Stained Glass', hex:'#169C9C'},
+    {name:'Purple', glass:'Purple Stained Glass', hex:'#8932B8'},
+    {name:'Blue', glass:'Blue Stained Glass', hex:'#3C44AA'},
+    {name:'Brown', glass:'Brown Stained Glass', hex:'#835432'},
+    {name:'Green', glass:'Green Stained Glass', hex:'#5E7C16'},
+    {name:'Red', glass:'Red Stained Glass', hex:'#B02E26'},
+    {name:'Black', glass:'Black Stained Glass', hex:'#1D1D21'}
+];
+const BEACON_BEAM_GLASS_COLORS_WITH_RGB = BEACON_BEAM_GLASS_COLORS.map(c => ({...c, rgb: parseHexColor(c.hex)}));
+
+function parseHexColor(hex){
+    const cleaned = normalizeHexCode(hex);
+    return {
+        r: parseInt(cleaned.slice(0, 2), 16),
+        g: parseInt(cleaned.slice(2, 4), 16),
+        b: parseInt(cleaned.slice(4, 6), 16)
+    };
+}
+
+function colorDistance(a, b){
+    return Math.pow(a.r - b.r, 2) + Math.pow(a.g - b.g, 2) + Math.pow(a.b - b.b, 2);
+}
+
+function findClosestBeaconGlassColor(rgb){
+    let best = null;
+    for(const color of BEACON_BEAM_GLASS_COLORS_WITH_RGB){
+        const distance = colorDistance(rgb, color.rgb);
+        if(best === null || distance < best.distance){
+            best = {...color, distance};
+        }
+    }
+    return best;
+}
+
+function beaconColorLookup(){ beaconColorLookupScoped(document); }
+
+function beaconColorLookupScoped(root){
+    const q = (sel)=> find(root, sel);
+    const picker = q('#beaconColorPicker');
+    const input = q('#beaconHexInput');
+    const out = q('#beaconColorOut');
+    if(!out) return;
+    let hex = formatHexCode(input?.value || picker?.value || '');
+    if(!hex){
+        out.innerHTML = 'Enter a valid 6-digit hex code like <code>#3AB3DA</code>.';
+        return;
+    }
+    if(input) input.value = hex;
+    if(picker) picker.value = hex;
+    const rgb = parseHexColor(hex);
+    const nearest = findClosestBeaconGlassColor(rgb);
+    if(!nearest){ out.innerHTML = 'No matching glass color found.'; return; }
+    const exact = nearest.hex.toLowerCase() === hex.toLowerCase();
+    out.innerHTML = `Nearest beacon beam glass:<br><strong>${nearest.glass}</strong> (${nearest.name})<br>Beam color: ${nearest.hex}` +
+        `<br>${exact ? 'Exact match.' : 'Closest available stained glass color for beacon beams.'}`;
+}
+
+function formatGlassCombo(combo){
+    const counts = {};
+    combo.forEach(name => { counts[name] = (counts[name] || 0) + 1; });
+    return Object.keys(counts).map(name => `${counts[name]}× ${name}`).join(', ');
+}
+
+function findBestBeaconGlassCombo(rgb, maxLayers = 8){
+    const colors = BEACON_BEAM_GLASS_COLORS_WITH_RGB;
+    let best = {distance: Infinity, combo: null, avg: null, count: 0};
+    const target = rgb;
+
+    function search(start, remaining, sumR, sumG, sumB, combo){
+        if(remaining === 0){
+            const count = combo.length;
+            const avg = { r: sumR / count, g: sumG / count, b: sumB / count };
+            const dist = colorDistance(avg, target);
+            if(dist < best.distance){ best = {distance: dist, combo: combo.slice(), avg, count}; }
+            return;
+        }
+        for(let i = start; i < colors.length; i++){
+            const color = colors[i];
+            combo.push(color.name);
+            search(i, remaining - 1, sumR + color.rgb.r, sumG + color.rgb.g, sumB + color.rgb.b, combo);
+            combo.pop();
+            if(best.distance === 0) return;
+        }
+    }
+
+    for(let count = 1; count <= maxLayers; count++){
+        search(0, count, 0, 0, 0, []);
+        if(best.distance === 0) break;
+    }
+    return best.distance === Infinity ? null : best;
+}
+
+function beaconColorComboLookup(){ beaconColorComboLookupScoped(document); }
+
+function beaconColorComboLookupScoped(root){
+    const q = (sel)=> find(root, sel);
+    const picker = q('#beaconColorPicker');
+    const input = q('#beaconHexInput');
+    const out = q('#beaconColorOut');
+    const comboOut = q('#beaconComboOut');
+    if(!comboOut) return;
+    let hex = formatHexCode(input?.value || picker?.value || '');
+    if(!hex){
+        comboOut.innerHTML = 'Enter a valid 6-digit hex code like <code>#3AB3DA</code>.';
+        return;
+    }
+    if(input) input.value = hex;
+    if(picker) picker.value = hex;
+    const rgb = parseHexColor(hex);
+    const best = findBestBeaconGlassCombo(rgb, 8);
+    if(!best){ comboOut.innerHTML = 'Could not find a good combination.'; return; }
+    const avgHex = `#${Math.round(best.avg.r).toString(16).padStart(2,'0')}${Math.round(best.avg.g).toString(16).padStart(2,'0')}${Math.round(best.avg.b).toString(16).padStart(2,'0')}`.toUpperCase();
+    comboOut.innerHTML = `Best combination using ${best.count} layer${best.count === 1 ? '' : 's'}:<br><strong>${formatGlassCombo(best.combo)}</strong><br>Resulting beam approx: ${avgHex}<br>Distance: ${Math.round(Math.sqrt(best.distance))} <span class="info-tooltip" title="The distance is a color-matching score in RGB space: lower means the resulting beam is closer to the chosen color; 0 is an exact match.">i</span>`;
+    if(out){ out.innerHTML = ''; }
+}
+
+// --- Whitelist generator helpers ---
+// deterministic UUID v4-like from string (not RFC-perfect but stable)
+function fnv1a32(str){
+    let h = 0x811c9dc5;
+    for(let i=0;i<str.length;i++){
+        h ^= str.charCodeAt(i);
+        h = Math.imul(h, 0x01000193) >>> 0;
+    }
+    return h >>> 0;
+}
+function uuidFromString(str){
+    // produce 16 bytes from two 32-bit FNV hashes
+    const a = fnv1a32(str + '\x00');
+    const b = fnv1a32(str + '\x01');
+    const c = fnv1a32(str + '\x02');
+    const d = fnv1a32(str + '\x03');
+    const toHex = (n, len)=> n.toString(16).padStart(len,'0');
+    // assemble UUID-like hex
+    const hex = toHex(a,8) + toHex(b,8) + toHex(c,8) + toHex(d,8);
+    return hex.slice(0,8) + '-' + hex.slice(8,12) + '-' + hex.slice(12,16) + '-' + hex.slice(16,20) + '-' + hex.slice(20,32);
+}
+
+function buildWhitelistFromText(text, genUuid){
+    const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+    const out = [];
+    for(const line of lines){
+        const parts = line.split(',').map(p=>p.trim());
+        const name = parts[0];
+        let uuid = parts[1] || '';
+        if(!uuid && genUuid){ uuid = uuidFromString(name); }
+        if(!uuid) uuid = '';
+        out.push({name, uuid});
+    }
+    return out;
+}
+
+function generateWhitelist(){
+    const text = document.getElementById('wlList').value || '';
+    const gen = !!document.getElementById('wlGenUuid').checked;
+    const entries = buildWhitelistFromText(text, gen);
+    // format to standard mojang whitelist: array of {"uuid":"...","name":"..."}
+    const json = JSON.stringify(entries.map(e=>({uuid:e.uuid, name:e.name})), null, 2);
+    // download as whitelist.json
+    const blob = new Blob([json], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'whitelist.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    const out = document.getElementById('wlOut'); if(out) out.textContent = json;
+}
+
+function previewWhitelist(){
+    const text = document.getElementById('wlList').value || '';
+    const gen = !!document.getElementById('wlGenUuid').checked;
+    const entries = buildWhitelistFromText(text, gen);
+    const json = JSON.stringify(entries.map(e=>({uuid:e.uuid, name:e.name})), null, 2);
+    const out = document.getElementById('wlOut'); if(out) out.textContent = json;
+}
+
+// Lookup Minecraft UUIDs by player name using Mojang API (name -> uuid)
+// Reference: use a bulk lookup style flow with fallback services and clear output.
+async function lookupUuids(){ return lookupUuidsScoped(document); }
+async function lookupUuidsScoped(root){
+    const q = (s)=> find(root, s);
+    const textarea = q('#wlList'); if(!textarea) return;
+    const out = q('#wlOut');
+    const lines = textarea.value.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+    if(lines.length === 0){ if(out) out.textContent = 'No names to lookup.'; return; }
+
+    let foundCount = 0;
+    let missingCount = 0;
+    const results = [];
+    out && (out.textContent = 'Looking up UUIDs...');
+
+    for(let i=0;i<lines.length;i++){
+        const raw = lines[i];
+        const parts = raw.split(',').map(p=>p.trim());
+        const name = parts[0];
+        if(!name){ continue; }
+
+        if(parts[1]){
+            results.push(raw);
+            foundCount++;
+            out && (out.textContent = `Skipping existing UUID for ${name} (${i+1}/${lines.length})`);
+            continue;
+        }
+
+        const cacheKey = 'uuidcache:' + name.toLowerCase();
+        const cached = tryGetCache(cacheKey);
+        if(cached){
+            results.push(name + ',' + cached);
+            foundCount++;
+            out && (out.textContent = `Using cached UUID for ${name} (${i+1}/${lines.length})`);
+            await new Promise(r=>setTimeout(r, 120));
+            continue;
+        }
+
+        let uuid = '';
+        let message = '';
+
+        try {
+            const services = [
+                `https://api.mojang.com/users/profiles/minecraft/${encodeURIComponent(name)}`,
+                `https://playerdb.co/api/player/minecraft/${encodeURIComponent(name)}`,
+                `https://api.ashcon.app/mojang/v2/user/${encodeURIComponent(name)}`
+            ];
+
+            for(const url of services){
+                const resp = await fetch(url);
+                if(resp.status === 200){
+                    const data = await resp.json();
+                    if(data.id){ uuid = data.id; }
+                    else if(data.uuid){ uuid = data.uuid; }
+                    else if(data.data?.player?.id){ uuid = data.data.player.id; }
+
+                    if(uuid){
+                        foundCount++;
+                        results.push(name + ',' + uuid);
+                        trySetCache(cacheKey, uuid, 30*24*60*60*1000);
+                        message = `Found UUID for ${name}`;
+                        break;
+                    }
+                }
+                if(resp.status === 204 || resp.status === 404){
+                    message = `Player not found: ${name}`;
+                    break;
+                }
+            }
+
+            if(!uuid){
+                results.push(name + ',');
+                missingCount++;
+                if(!message){ message = `Could not resolve UUID for ${name}`; }
+                out && (out.textContent = message);
+            }
+        } catch(e) {
+            results.push(name + ',');
+            missingCount++;
+            out && (out.textContent = `Lookup failed for ${name}: ${e.message || e}`);
+        }
+
+        await new Promise(r=>setTimeout(r, 220));
+        out && (out.textContent = `Looking up UUIDs... (${i+1}/${lines.length})`);
+    }
+
+    textarea.value = results.join('\n');
+    const gen = !!q('#wlGenUuid')?.checked;
+    const entries = buildWhitelistFromText(textarea.value, gen);
+    const json = JSON.stringify(entries.map(e=>({uuid:e.uuid, name:e.name})), null, 2);
+    out && (out.textContent = `Lookup complete. ${foundCount} found, ${missingCount} missing.\n${json}`);
+}
+
+// --- simple localStorage cache helpers ---
+function tryGetCache(key){ try{ const raw = localStorage.getItem(key); if(!raw) return null; const obj = JSON.parse(raw); if(!obj.v) return null; if(obj.e && Date.now() > obj.e){ localStorage.removeItem(key); return null; } return obj.v; } catch(e){ return null; } }
+function trySetCache(key, value, ttl){ try{ const obj = { v: value }; if(ttl) obj.e = Date.now() + ttl; localStorage.setItem(key, JSON.stringify(obj)); } catch(e){} }
+
+function clearUuidCache(){ clearUuidCacheScoped(document); }
+function clearUuidCacheScoped(root){
+    const out = find(root, '#wlOut');
+    try{ const keys = Object.keys(localStorage); for(const k of keys){ if(k.startsWith('uuidcache:')) localStorage.removeItem(k); } if(out) out.textContent = 'UUID cache cleared.'; } catch(e){ /* ignore */ } }
+
+function copyWhitelist(){
+    const out = document.getElementById('wlOut'); if(!out) return; const text = out.textContent || '';
+    if(!text) return; navigator.clipboard?.writeText(text).then(()=>alert('Whitelist JSON copied to clipboard'), ()=>alert('Copy failed'));
+}
+
+// scoped versions for cloned windows
+function generateWhitelistScoped(root){ const q=(s)=> find(root, s); const text = q('#wlList')?.value || ''; const gen = !!q('#wlGenUuid')?.checked; const entries = buildWhitelistFromText(text, gen); const json = JSON.stringify(entries.map(e=>({uuid:e.uuid, name:e.name})), null,2); const out = q('#wlOut'); if(out) out.textContent = json; const blob = new Blob([json], {type:'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'whitelist.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }
+function previewWhitelistScoped(root){ const q=(s)=> find(root, s); const text = q('#wlList')?.value||''; const gen = !!q('#wlGenUuid')?.checked; const entries = buildWhitelistFromText(text, gen); const json = JSON.stringify(entries.map(e=>({uuid:e.uuid, name:e.name})), null,2); const out = q('#wlOut'); if(out) out.textContent = json; }
+function copyWhitelistScoped(root){ const q=(s)=> find(root, s); const out = q('#wlOut'); if(!out) return; const text = out.textContent || ''; if(!text) return; navigator.clipboard?.writeText(text).then(()=>{ if(root===document) alert('Whitelist JSON copied'); }, ()=>{ if(root===document) alert('Copy failed'); }); }
+
+function readLitematic(){
+    readLitematicScoped(document);
+}
+
+function readLitematicScoped(root){
+    const q = (sel)=> find(root, sel);
+    const file = q('#schematic')?.files?.[0];
+    const out = q('#litematicOut');
+    if(!file){ if(out) out.innerHTML = 'No file selected'; return; }
+    if(out) out.innerHTML = `Loaded:<br>${file.name}<br><br>A full NBT parser can be added here to extract exact materials.`;
+}
+
+// --- Ticks to seconds converter ---
+function ticksToSeconds(){ ticksToSecondsScoped(document); }
+function ticksToSecondsScoped(root){ const q=(s)=> find(root, s); const val = Number(q('#ticksInput')?.value || 0); const seconds = val / 20; const out = q('#ticksOut'); if(out) out.innerHTML = `${val} ticks = ${seconds} seconds`; }
+
+// --- Seconds to ticks converter ---
+function secondsToTicks(){ secondsToTicksScoped(document); }
+function secondsToTicksScoped(root){ const q=(s)=> find(root, s); const secs = Number(q('#secondsInput')?.value || 0); const ticks = Math.round(secs * 20); const out = q('#ticksOut'); if(out) out.innerHTML = `${secs} seconds ≈ ${ticks} ticks`; }
+
+// --- Hopper clock items -> seconds ---
+function hopperToSeconds(){ hopperToSecondsScoped(document); }
+function hopperToSecondsScoped(root){ const q=(s)=> find(root, s); const items = Number(q('#hopperItems')?.value || 0); const ticksPerItem = Number(q('#hopperTicksPerItem')?.value || 8) || 8; const totalTicks = items * ticksPerItem; const seconds = totalTicks / 20; const out = q('#hopperOut'); if(out) out.innerHTML = `${items} items × ${ticksPerItem} ticks/item = ${totalTicks} ticks → ${seconds} seconds`; }
+
+// --- Enchantment planner ---
+// Minimal offline planner: validates names/levels and flags common incompatibilities.
+const ENCHANT_DB = {
+    'sharpness': {max:5, type:'weapon'},
+    'smite': {max:5, type:'weapon'},
+    'bane_of_arthropods': {max:5, type:'weapon'},
+    'unbreaking': {max:3},
+    'efficiency': {max:5, type:'tool'},
+    'fortune': {max:3, type:'tool'},
+    'silk_touch': {max:1, type:'tool'},
+    'mending': {max:1},
+    'protection': {max:4, type:'armor'},
+    'fire_protection': {max:4, type:'armor'},
+    'blast_protection': {max:4, type:'armor'},
+    'projectile_protection': {max:4, type:'armor'},
+    'power': {max:5, type:'bow'},
+    'punch': {max:2, type:'bow'},
+    'infinity': {max:1, type:'bow'},
+    'thorns': {max:3, type:'armor'},
+    'knockback': {max:2, type:'weapon'},
+    'fire_aspect': {max:2, type:'weapon'},
+    'sweeping_edge': {max:3, type:'weapon'}
+};
+
+function normalizeEnchantName(name){ return name.toLowerCase().replace(/[^a-z0-9_]/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,''); }
+
+function planEnchantments(){ planEnchantmentsScoped(document); }
+function planEnchantmentsScoped(root){ const q=(s)=> find(root, s); const text = (q('#enchantList')?.value || '').trim(); const out = q('#enchantOut'); if(!out) return; if(!text){ out.textContent='No enchantments provided.'; return; }
+    const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+    const parsed = [];
+    for(const line of lines){
+        let name = line; let level = null;
+        if(line.includes(':')){ const parts = line.split(':').map(p=>p.trim()); name = parts[0]; level = Number(parts[1]) || null; }
+        const key = normalizeEnchantName(name);
+        parsed.push({raw:line, name, key, level});
+    }
+    const problems = [];
+    const seenTypes = {};
+    const outLines = [];
+    for(const p of parsed){
+        const info = ENCHANT_DB[p.key];
+        if(!info){ outLines.push(`Unknown enchantment: ${p.name}`); problems.push(`Unknown: ${p.name}`); continue; }
+        const level = (p.level===null ? info.max : p.level);
+        if(level > info.max) problems.push(`${p.name} level ${level} > max ${info.max}`);
+        outLines.push(`${p.name}: ${level} (max ${info.max})`);
+        if(info.type){ if(seenTypes[info.type]) problems.push(`Incompatibility: ${p.name} may conflict with ${seenTypes[info.type]}`); else seenTypes[info.type]=p.name; }
+    }
+    let summary = outLines.join('\n');
+    if(problems.length){ summary += '\n\nWarnings:\n' + problems.map(p=>'- '+p).join('\n'); }
+    out.textContent = summary;
+}
+
+function copyEnchantPlan(){ const out = document.getElementById('enchantOut'); if(!out) return; const text = out.textContent || ''; if(!text) return; navigator.clipboard?.writeText(text).then(()=>alert('Plan copied'), ()=>alert('Copy failed')); }
+
+function copyEnchantPlanScoped(root){ const q=(s)=> find(root, s); const out = q('#enchantOut'); if(!out) return; const text = out.textContent || ''; if(!text) return; navigator.clipboard?.writeText(text).then(()=>{ if(root===document) alert('Plan copied'); }, ()=>{ if(root===document) alert('Copy failed'); }); }
+
+const BREWING_ICONS = {
+    'Water Bottle': '🧪',
+    'Nether Wart': '🌿',
+    'Glowstone Dust': '✨',
+    'Redstone Dust': '🔷',
+    'Golden Carrot': '🥕',
+    'Fermented Spider Eye': '🕷️',
+    'Magma Cream': '🔥',
+    'Pufferfish': '🐡',
+    'Glistering Melon Slice': '🍈',
+    'Ghast Tear': '💧',
+    'Blaze Powder': '🔥',
+    'Sugar': '🍬',
+    'Rabbit\'s Foot': '🐇',
+    'Turtle Shell': '🐢',
+    'Phantom Membrane': '🪶',
+    'Spider Eye': '🕸️',
+    'Dragon\'s Breath': '🐉',
+    'Gunpowder': '💥'
+};
+
+const POTION_RECIPES = {
+    awkward: { label: 'Awkward Potion', prep: ['Water Bottle + Nether Wart → Awkward Potion'], long: false, strong: false },
+    thick: { label: 'Thick Potion', prep: ['Water Bottle + Nether Wart → Awkward Potion', 'Add Glowstone Dust → Thick Potion'], long: false, strong: false },
+    mundane: { label: 'Mundane Potion', prep: ['Water Bottle + Nether Wart → Awkward Potion', 'Add Redstone Dust → Mundane Potion'], long: false, strong: false },
+    night_vision: { label: 'Potion of Night Vision', prep: ['Water Bottle + Nether Wart → Awkward Potion', 'Add Golden Carrot → Night Vision Potion'], long: true, strong: false },
+    invisibility: { label: 'Potion of Invisibility', prep: ['Water Bottle + Nether Wart → Awkward Potion', 'Add Golden Carrot → Night Vision Potion', 'Add Fermented Spider Eye → Invisibility Potion'], long: true, strong: false },
+    fire_resistance: { label: 'Potion of Fire Resistance', prep: ['Water Bottle + Nether Wart → Awkward Potion', 'Add Magma Cream → Fire Resistance Potion'], long: true, strong: false },
+    water_breathing: { label: 'Potion of Water Breathing', prep: ['Water Bottle + Nether Wart → Awkward Potion', 'Add Pufferfish → Water Breathing Potion'], long: true, strong: false },
+    healing: { label: 'Potion of Healing', prep: ['Water Bottle + Nether Wart → Awkward Potion', 'Add Glistering Melon Slice → Healing Potion'], long: false, strong: true },
+    regeneration: { label: 'Potion of Regeneration', prep: ['Water Bottle + Nether Wart → Awkward Potion', 'Add Ghast Tear → Regeneration Potion'], long: false, strong: true },
+    strength: { label: 'Potion of Strength', prep: ['Water Bottle + Nether Wart → Awkward Potion', 'Add Blaze Powder → Strength Potion'], long: false, strong: true },
+    swiftness: { label: 'Potion of Swiftness', prep: ['Water Bottle + Nether Wart → Awkward Potion', 'Add Sugar → Swiftness Potion'], long: true, strong: false },
+    slowness: { label: 'Potion of Slowness', prep: ['Water Bottle + Nether Wart → Awkward Potion', 'Add Fermented Spider Eye to Swiftness Potion → Slowness Potion'], long: true, strong: false },
+    leaping: { label: 'Potion of Leaping', prep: ['Water Bottle + Nether Wart → Awkward Potion', 'Add Rabbit\'s Foot → Leaping Potion'], long: true, strong: false },
+    turtle_master: { label: 'Potion of Turtle Master', prep: ['Water Bottle + Nether Wart → Awkward Potion', 'Add Turtle Shell → Turtle Master Potion'], long: false, strong: false },
+    slow_falling: { label: 'Potion of Slow Falling', prep: ['Water Bottle + Nether Wart → Awkward Potion', 'Add Phantom Membrane → Slow Falling Potion'], long: true, strong: false },
+    poison: { label: 'Potion of Poison', prep: ['Water Bottle + Nether Wart → Awkward Potion', 'Add Spider Eye → Poison Potion'], long: false, strong: true },
+    harming: { label: 'Potion of Harming', prep: ['Water Bottle + Nether Wart → Awkward Potion', 'Add Fermented Spider Eye to Healing Potion → Harming Potion'], long: false, strong: true },
+    weakness: { label: 'Potion of Weakness', prep: ['Water Bottle + Nether Wart → Awkward Potion', 'Add Fermented Spider Eye → Weakness Potion'], long: true, strong: false }
+};
+
+function updatePotionVisual(root){
+    root = root || document;
+    const q = (sel)=> (root.querySelector ? root.querySelector(sel) : document.querySelector(sel));
+    const select = q('#potionType');
+    const visual = q('#potionVisual');
+    if(!select || !visual) return;
+    const info = POTION_RECIPES[select.value];
+    if(!info){ visual.innerHTML = ''; return; }
+    const ingredients = info.prep[0].split(' → ')[0].split(' + ').map(i => i.trim());
+    const extras = info.prep.slice(1).map(step => {
+        const match = step.match(/Add ([^→]+) →/);
+        return match ? match[1].trim() : null;
+    }).filter(Boolean);
+    const allItems = [...new Set([...ingredients, ...extras])];
+    visual.innerHTML = allItems.map(item => {
+        const icon = BREWING_ICONS[item] || '•';
+        return `<span>${icon}<strong>${item}</strong></span>`;
+    }).join('');
+}
+
+function generatePotionRecipe(){ generatePotionRecipeScoped(document); }
+function generatePotionRecipeScoped(root){
+    root = root || document;
+    const q = (sel)=> (root.querySelector ? root.querySelector(sel) : document.querySelector(sel));
+    const type = q('#potionType')?.value || 'awkward';
+    const strong = !!q('#potionStrong')?.checked;
+    const long = !!q('#potionLong')?.checked;
+    const splash = !!q('#potionSplash')?.checked;
+    const lingering = !!q('#potionLingering')?.checked;
+    const out = q('#potionOut');
+    if(!out) return;
+    const info = POTION_RECIPES[type];
+    if(!info){ out.textContent = 'Unknown potion type.'; return; }
+    const lines = [];
+    const titleParts = [info.label];
+    if(strong) titleParts.push('Strong');
+    if(long) titleParts.push('Long');
+    if(splash) titleParts.push('Splash');
+    if(lingering) titleParts.push('Lingering');
+    lines.push(titleParts.join(' '));
+    lines.push('');
+    lines.push('Brewing steps:');
+    for(let i = 0; i < info.prep.length; i++){
+        const step = info.prep[i];
+        const decorated = step.replace(/([^→]+)(?= →)/g, item => {
+            const icon = BREWING_ICONS[item.trim()] || '';
+            return icon ? `${icon} ${item.trim()}` : item;
+        });
+        lines.push(`${i + 1}. ${decorated}`);
+    }
+    let nextStep = info.prep.length + 1;
+    if(strong){
+        if(info.strong){
+            lines.push(`${nextStep++}. ✨ Glowstone Dust → Strong ${info.label}`);
+        } else {
+            lines.push(`${nextStep++}. Strong variant is not available for this potion; skip Glowstone Dust.`);
+        }
+    }
+    if(long){
+        if(info.long){
+            lines.push(`${nextStep++}. 🔷 Redstone Dust → Long ${info.label}`);
+        } else {
+            lines.push(`${nextStep++}. Long variant is not available for this potion; skip Redstone Dust.`);
+        }
+    }
+    if(lingering){
+        if(!splash){
+            lines.push(`${nextStep++}. 💥 Gunpowder → Splash potion`);
+        }
+        lines.push(`${nextStep++}. 🐉 Dragon's Breath → Lingering potion`);
+    } else if(splash){
+        lines.push(`${nextStep++}. 💥 Gunpowder → Splash potion`);
+    }
+    out.textContent = lines.join('\n');
+    if(root === document){ updatePotionVisual(); }
+}
+
+function drawCircle(){
+    const rVal = document.getElementById('circleRadius').value.trim();
+    const wVal = document.getElementById('circleWidth').value.trim();
+    const hVal = document.getElementById('circleHeight').value.trim();
+    const filled = !!document.getElementById('circleFilled').checked;
+    // fixed pixels-per-block; removed adjustable UI control
+    const cellSize = 12;
+    const canvas = document.getElementById('circleCanvas');
+    let widthBlocks, heightBlocks;
+
+    if(rVal !== ''){
+        const r = Math.max(1, Math.round(Number(rVal)));
+        widthBlocks = heightBlocks = r*2 + 1; // include center
+    } else if(wVal !== '' || hVal !== ''){
+        widthBlocks = Math.max(1, Math.round(Number(wVal) || 0));
+        heightBlocks = Math.max(1, Math.round(Number(hVal) || 0));
+        if(!widthBlocks || !heightBlocks){ alert('Enter valid width and height.'); return; }
+    } else { alert('Enter a radius or width/height.'); return; }
+
+    // Ensure odd dimensions to center the circle
+    if(widthBlocks % 2 === 0) widthBlocks++;
+    if(heightBlocks % 2 === 0) heightBlocks++;
+
+    const cols = widthBlocks;
+    const rows = heightBlocks;
+    // margins (in pixels before scaling)
+    const baseMarginLeft = 40;
+    const baseMarginTop = 8;
+    const baseMarginRight = 8;
+    const baseMarginBottom = 36;
+
+    // Fit into wrapper size while preserving aspect and margins
+    const wrap = document.getElementById('circleWrap');
+    // default the wrapper to a 1:1 square so the window is square by default
+    // but don't override an explicit inline width/height set by the user (resizing)
+    if(wrap && !wrap.style.width && !wrap.style.height) wrap.style.aspectRatio = '1 / 1';
+    // measure wrapper size
+    let wrapW = wrap ? wrap.clientWidth : 400;
+    let wrapH = wrap ? wrap.clientHeight : 400;
+
+    // desired base canvas size
+    const baseW = cols * cellSize + baseMarginLeft + baseMarginRight;
+    const baseH = rows * cellSize + baseMarginTop + baseMarginBottom;
+
+    // user zoom multiplier (1 = fit scale)
+    const userZoom = Number(document.getElementById('circleZoom')?.value) || 1;
+    // compute fit when wrapper is square
+    const fitScaleSquare = Math.min(wrapW / baseW, wrapH / baseH);
+    let chosenScale = fitScaleSquare;
+    // try switching wrapper to the native cols:rows ratio; if that improves fit, keep it
+    if(wrap && cols > 0 && rows > 0){
+        if(!wrap.style.width && !wrap.style.height){
+            wrap.style.aspectRatio = cols + ' / ' + rows;
+        }
+        const wrapW2 = wrap.clientWidth; const wrapH2 = wrap.clientHeight;
+        const fitScaleAlt = Math.min(wrapW2 / baseW, wrapH2 / baseH);
+        if(fitScaleAlt > fitScaleSquare + 0.01){ // small threshold
+            chosenScale = fitScaleAlt; wrapW = wrapW2; wrapH = wrapH2;
+        } else {
+            // revert to square (only if we control aspect)
+            if(!wrap.style.width && !wrap.style.height) wrap.style.aspectRatio = '1 / 1';
+            wrapW = wrap.clientWidth; wrapH = wrap.clientHeight;
+            chosenScale = fitScaleSquare;
+        }
+    }
+    const scale = chosenScale * userZoom;
+
+    // calculate canvas size while preserving aspect ratio
+    const canvasW = Math.round(baseW * scale);
+    const canvasH = Math.round(baseH * scale);
+
+    // set canvas internal resolution
+    canvas.width = canvasW;
+    canvas.height = canvasH;
+    // set CSS size to the same pixel size so the browser doesn't stretch it
+    canvas.style.width = canvasW + 'px';
+    canvas.style.height = canvasH + 'px';
+    // center canvas inside wrapper
+    wrap.style.display = 'flex';
+    wrap.style.justifyContent = 'center';
+    wrap.style.alignItems = 'center';
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    // scaled margins and cell size (base values before applying pan)
+    const marginLeftBase = Math.round(baseMarginLeft * scale);
+    const marginTopBase = Math.round(baseMarginTop * scale);
+    const marginRight = Math.round(baseMarginRight * scale);
+    const marginBottom = Math.round(baseMarginBottom * scale);
+    const sCell = cellSize * scale;
+    
+    // handle pan (pixels). If a previous pan exists from a different scale, rescale it
+    let panX = 0, panY = 0;
+    // initialize pan state
+    drawCircle._pan = drawCircle._pan || { x:0, y:0, scale: scale, user:false };
+    if(drawCircle._pan){
+        // rescale previous pan to current scale
+        if(drawCircle._pan.scale && drawCircle._pan.scale !== scale){
+            drawCircle._pan.x = drawCircle._pan.x * (scale / drawCircle._pan.scale);
+            drawCircle._pan.y = drawCircle._pan.y * (scale / drawCircle._pan.scale);
+        }
+        panX = drawCircle._pan.x || 0;
+        panY = drawCircle._pan.y || 0;
+    }
+
+    // center (in block coordinates) - required for auto-centering math
+    const cx = (cols-1)/2;
+    const cy = (rows-1)/2;
+    // normalized ellipse radii
+    const rx = (cols-1)/2;
+    const ry = (rows-1)/2;
+
+    // auto-center the circle into the wrapper unless the user has manually panned
+    const marginLeftUnclamped = marginLeftBase + Math.round(panX);
+    const marginTopUnclamped = marginTopBase + Math.round(panY);
+    let marginLeft = marginLeftUnclamped;
+    let marginTop = marginTopUnclamped;
+    if(!drawCircle._pan.user){
+        // center so grid sits centered in wrapper area
+        marginLeft = Math.round((canvas.width - cols*sCell)/2) - Math.round((cols-1)/2*sCell - cx*sCell) || marginLeftBase;
+        // place origin row such that bottom aligns with bottom margin
+        marginTop = Math.round((canvas.height - rows*sCell)/2) - Math.round((rows-1)/2*sCell - cy*sCell) || marginTopBase;
+        // update pan state to reflect calculated margins
+        drawCircle._pan.x = marginLeft - marginLeftBase; drawCircle._pan.y = marginTop - marginTopBase;
+    }
+
+    // clamp panning so grid remains at least partly visible
+    function clampPanValues(mLeft, mTop){
+        const minLeft = Math.min(0, canvas.width - (cols*sCell + baseMarginLeft + baseMarginRight));
+        const maxLeft = Math.max(0, canvas.width - baseMarginLeft - baseMarginRight - cols*sCell);
+        const minTop = Math.min(0, canvas.height - (rows*sCell + baseMarginTop + baseMarginBottom));
+        const maxTop = Math.max(0, canvas.height - baseMarginTop - baseMarginBottom - rows*sCell);
+        return [Math.max(minLeft, Math.min(maxLeft, mLeft)), Math.max(minTop, Math.min(maxTop, mTop))];
+    }
+    [marginLeft, marginTop] = clampPanValues(marginLeft, marginTop);
+
+    // center and radii already computed above
+
+    // draw grid background (offset by margins)
+    ctx.fillStyle = '#0c0a10';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.strokeStyle = '#222';
+    ctx.lineWidth = 1;
+    for(let x=0;x<=cols;x++){
+        const px = marginLeft + x*sCell;
+        ctx.beginPath(); ctx.moveTo(px,marginTop); ctx.lineTo(px,marginTop + rows*sCell); ctx.stroke();
+    }
+    for(let y=0;y<=rows;y++){
+        const py = marginTop + y*sCell;
+        ctx.beginPath(); ctx.moveTo(marginLeft,py); ctx.lineTo(marginLeft + cols*sCell,py); ctx.stroke();
+    }
+
+    const blocks = [];
+    // evaluate each block center whether it's inside the ellipse
+    // helper to test if a grid cell center is inside the normalized ellipse
+    function isInsideAt(c, r){
+        const nx = (c - cx) / rx; const ny = (r - cy) / ry; return (nx*nx + ny*ny) <= 1.0001;
+    }
+    for(let row=0; row<rows; row++){
+        for(let col=0; col<cols; col++){
+            if(filled){
+                if(!isInsideAt(col, row)) continue;
+            } else {
+                // outline: only draw cells that are inside and have at least one neighbor outside
+                if(!isInsideAt(col, row)) continue;
+                let neighborOutside = false;
+                for(let oy=-1; oy<=1 && !neighborOutside; oy++){
+                    for(let ox=-1; ox<=1; ox++){
+                        if(ox===0 && oy===0) continue;
+                        const nc = col + ox, nr = row + oy;
+                        if(nc < 0 || nc >= cols || nr < 0 || nr >= rows){ neighborOutside = true; break; }
+                        if(!isInsideAt(nc, nr)){ neighborOutside = true; break; }
+                    }
+                }
+                if(!neighborOutside) continue;
+            }
+            // fill cell
+            ctx.fillStyle = 'rgba(143,130,199,0.95)';
+            ctx.fillRect(marginLeft + col*sCell+1, marginTop + row*sCell+1, Math.max(1, sCell-2), Math.max(1, sCell-2));
+            // coordinate relative to bottom-left origin: (0,0) at bottom-left
+            blocks.push([col, rows - 1 - row]);
+        }
+    }
+    // draw origin marker at bottom-left cell center
+    ctx.strokeStyle = 'rgba(205,164,125,0.9)';
+    const originX = marginLeft + 0*sCell + sCell/2;
+    const originY = marginTop + (rows-1)*sCell + sCell/2;
+    ctx.beginPath(); ctx.moveTo(originX-6*scale, originY); ctx.lineTo(originX+6*scale, originY); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(originX, originY-6*scale); ctx.lineTo(originX, originY+6*scale); ctx.stroke();
+
+    // draw numeric axis ticks along bottom (X) and left (Z)
+    ctx.fillStyle = 'white';
+    ctx.font = Math.max(8, Math.floor(sCell*0.35)) + 'px sans-serif';
+    // X labels on bottom
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    for(let col=0; col<cols; col++){
+        const gx = col; // X from 0..cols-1, bottom-left origin
+        const tx = marginLeft + col*sCell + sCell/2;
+        const ty = marginTop + rows*sCell + 4;
+        ctx.fillText(gx, tx, ty);
+    }
+    // Y labels on left
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    for(let row=0; row<rows; row++){
+        const gz = rows - 1 - row; // Z from 0 at bottom to rows-1 at top
+        const ty = marginTop + row*sCell + sCell/2;
+        const tx = marginLeft - 6;
+        ctx.fillText(gz, tx, ty);
+    }
+
+    // store last draw params for redraw when toggling fullscreen
+    drawCircle._last = { rVal, wVal, hVal, filled, cellSize };
+    // store current scale so pan can be rescaled when zoom/fullscreen changes
+    drawCircle._pan.scale = scale;
+
+    // after drawing, ensure the page content is pushed below the fixed header
+    updatePinnedHeight();
+}
+
+function onZoomChange(){
+    const label = document.getElementById('zoomLabel');
+    const val = Number(document.getElementById('circleZoom').value);
+    label.textContent = Math.round(val*100) + '%';
+    // live update
+    drawCircle();
+}
+
+// adjust body top padding to prevent content being hidden under the fixed circle card
+function updatePinnedHeight(){
+    const card = document.getElementById('circleCard');
+    if(card){
+        // give a small gap
+        document.body.style.paddingTop = (card.offsetHeight + 8) + 'px';
+    }
+}
+
+// Scoped circle draw + controls so each window can have its own independent canvas and controls
+function drawCircleScoped(root){
+    root = root || document;
+    const q = (sel)=> root.querySelector(sel);
+    const rVal = (q('#circleRadius')?.value || '').trim();
+    const wVal = (q('#circleWidth')?.value || '').trim();
+    const hVal = (q('#circleHeight')?.value || '').trim();
+    const filled = !!(q('#circleFilled')?.checked);
+    // fixed pixels-per-block for scoped windows as well
+    const cellSize = 12;
+    const canvas = q('#circleCanvas');
+    if(!canvas) return;
+    let widthBlocks, heightBlocks;
+
+    if(rVal !== ''){
+        const r = Math.max(1, Math.round(Number(rVal)));
+        widthBlocks = heightBlocks = r*2 + 1; // include center
+    } else if(wVal !== '' || hVal !== ''){
+        widthBlocks = Math.max(1, Math.round(Number(wVal) || 0));
+        heightBlocks = Math.max(1, Math.round(Number(hVal) || 0));
+        if(!widthBlocks || !heightBlocks){ if(root!==document) alert('Enter valid width and height.'); return; }
+    } else { if(root!==document) alert('Enter a radius or width/height.'); return; }
+
+    if(widthBlocks % 2 === 0) widthBlocks++;
+    if(heightBlocks % 2 === 0) heightBlocks++;
+
+    const cols = widthBlocks; const rows = heightBlocks;
+    const baseMarginLeft = 40; const baseMarginTop = 8; const baseMarginRight = 8; const baseMarginBottom = 36;
+    const wrap = q('#circleWrap');
+    if(wrap) wrap.style.aspectRatio = '1 / 1';
+    let wrapW = wrap ? wrap.clientWidth : 400;
+    let wrapH = wrap ? wrap.clientHeight : 400;
+    const baseW = cols * cellSize + baseMarginLeft + baseMarginRight;
+    const baseH = rows * cellSize + baseMarginTop + baseMarginBottom;
+    const userZoom = Number(q('#circleZoom')?.value) || 1;
+    const fitScaleSquare = Math.min(wrapW / baseW, wrapH / baseH);
+    let chosenScale = fitScaleSquare;
+    if(wrap && cols > 0 && rows > 0){
+        wrap.style.aspectRatio = cols + ' / ' + rows;
+        const wrapW2 = wrap.clientWidth; const wrapH2 = wrap.clientHeight;
+        const fitScaleAlt = Math.min(wrapW2 / baseW, wrapH2 / baseH);
+        if(fitScaleAlt > fitScaleSquare + 0.01){ chosenScale = fitScaleAlt; wrapW = wrapW2; wrapH = wrapH2; }
+        else { wrap.style.aspectRatio = '1 / 1'; wrapW = wrap.clientWidth; wrapH = wrap.clientHeight; chosenScale = fitScaleSquare; }
+    }
+    const scale = chosenScale * userZoom;
+    const canvasW = Math.round(baseW * scale);
+    const canvasH = Math.round(baseH * scale);
+    canvas.width = canvasW; canvas.height = canvasH;
+    canvas.style.width = canvasW + 'px'; canvas.style.height = canvasH + 'px';
+    if(wrap){ wrap.style.display='flex'; wrap.style.justifyContent='center'; wrap.style.alignItems='center'; }
+    const ctx = canvas.getContext('2d'); ctx.clearRect(0,0,canvas.width,canvas.height);
+    const marginLeftBase = Math.round(baseMarginLeft * scale);
+    const marginTopBase = Math.round(baseMarginTop * scale);
+    const marginRight = Math.round(baseMarginRight * scale);
+    const marginBottom = Math.round(baseMarginBottom * scale);
+    const sCell = cellSize * scale;
+
+    root._pan = root._pan || { x:0, y:0, scale: scale, user:false };
+    let panX = 0, panY = 0;
+    if(root._pan.scale && root._pan.scale !== scale){
+        root._pan.x = root._pan.x * (scale / root._pan.scale);
+        root._pan.y = root._pan.y * (scale / root._pan.scale);
+    }
+    panX = root._pan.x || 0; panY = root._pan.y || 0; root._pan.scale = scale;
+    // auto-center unless user panned
+    let marginLeft = marginLeftBase + Math.round(panX);
+    let marginTop = marginTopBase + Math.round(panY);
+    if(!root._pan.user){
+        marginLeft = Math.round((canvas.width - cols*sCell)/2);
+        marginTop = Math.round((canvas.height - rows*sCell)/2);
+        root._pan.x = marginLeft - marginLeftBase; root._pan.y = marginTop - marginTopBase;
+    }
+    // clamp
+    const minLeft = Math.min(0, canvas.width - (cols*sCell + baseMarginLeft + baseMarginRight));
+    const maxLeft = Math.max(0, canvas.width - baseMarginLeft - baseMarginRight - cols*sCell);
+    const minTop = Math.min(0, canvas.height - (rows*sCell + baseMarginTop + baseMarginBottom));
+    const maxTop = Math.max(0, canvas.height - baseMarginTop - baseMarginBottom - rows*sCell);
+    marginLeft = Math.max(minLeft, Math.min(maxLeft, marginLeft));
+    marginTop = Math.max(minTop, Math.min(maxTop, marginTop));
+
+    const cx = (cols-1)/2; const cy = (rows-1)/2; const rx = (cols-1)/2; const ry = (rows-1)/2;
+
+    ctx.fillStyle = '#0c0a10'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.strokeStyle = '#222'; ctx.lineWidth = 1;
+    for(let x=0;x<=cols;x++){ const px = marginLeft + x*sCell; ctx.beginPath(); ctx.moveTo(px,marginTop); ctx.lineTo(px,marginTop + rows*sCell); ctx.stroke(); }
+    for(let y=0;y<=rows;y++){ const py = marginTop + y*sCell; ctx.beginPath(); ctx.moveTo(marginLeft,py); ctx.lineTo(marginLeft + cols*sCell,py); ctx.stroke(); }
+
+    const blocks = [];
+    function isInsideAtScoped(c, r){ const nx = (c - cx) / rx; const ny = (r - cy) / ry; return (nx*nx + ny*ny) <= 1.0001; }
+    for(let row=0; row<rows; row++){
+        for(let col=0; col<cols; col++){
+            if(filled){ if(!isInsideAtScoped(col, row)) continue; }
+            else {
+                if(!isInsideAtScoped(col, row)) continue;
+                let neighborOutside=false;
+                for(let oy=-1; oy<=1 && !neighborOutside; oy++){
+                    for(let ox=-1; ox<=1; ox++){
+                        if(ox===0 && oy===0) continue;
+                        const nc = col + ox, nr = row + oy;
+                        if(nc < 0 || nc >= cols || nr < 0 || nr >= rows){ neighborOutside = true; break; }
+                        if(!isInsideAtScoped(nc, nr)){ neighborOutside = true; break; }
+                    }
+                }
+                if(!neighborOutside) continue;
+            }
+            ctx.fillStyle = 'rgba(143,130,199,0.95)'; ctx.fillRect(marginLeft + col*sCell+1, marginTop + row*sCell+1, Math.max(1, sCell-2), Math.max(1, sCell-2));
+            blocks.push([col, rows - 1 - row]);
+        }
+    }
+
+    ctx.strokeStyle = 'rgba(205,164,125,0.9)';
+    const originX = marginLeft + 0*sCell + sCell/2; const originY = marginTop + (rows-1)*sCell + sCell/2;
+    ctx.beginPath(); ctx.moveTo(originX-6*scale, originY); ctx.lineTo(originX+6*scale, originY); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(originX, originY-6*scale); ctx.lineTo(originX, originY+6*scale); ctx.stroke();
+
+    ctx.fillStyle = 'white'; ctx.font = Math.max(8, Math.floor(sCell*0.35)) + 'px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline='top';
+    for(let col=0; col<cols; col++){ const gx=col; const tx = marginLeft + col*sCell + sCell/2; const ty = marginTop + rows*sCell + 4; ctx.fillText(gx, tx, ty); }
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    for(let row=0; row<rows; row++){ const gz = rows - 1 - row; const ty = marginTop + row*sCell + sCell/2; const tx = marginLeft - 6; ctx.fillText(gz, tx, ty); }
+
+    root._last = { rVal: rVal, wVal: wVal, hVal: hVal, filled: filled, cellSize: cellSize };
+}
+
+function onZoomChangeScoped(root){ const q=(s)=> find(root, s); const label = q('#zoomLabel'); const val = Number(q('#circleZoom')?.value || 1); if(label) label.textContent = Math.round(val*100)+'%'; drawCircleScoped(root); }
+function zoomInScoped(root){ const el = find(root, '#circleZoom'); if(!el) return; el.value = Math.min(Number(el.max), Number(el.value) + Number(el.step)); onZoomChangeScoped(root); }
+function zoomOutScoped(root){ const el = find(root, '#circleZoom'); if(!el) return; el.value = Math.max(Number(el.min), Number(el.value) - Number(el.step)); onZoomChangeScoped(root); }
+
+function toggleFullscreenScoped(root){ const wrap = find(root, '#circleWrap'); if(!wrap) return; if(!document.fullscreenElement){ wrap.requestFullscreen().catch(e=>alert('Fullscreen failed: '+e.message)); } else { document.exitFullscreen(); } }
+
+function zoomIn(){
+    const el = document.getElementById('circleZoom');
+    el.value = Math.min(Number(el.max), Number(el.value) + Number(el.step));
+    onZoomChange();
+}
+
+function zoomOut(){
+    const el = document.getElementById('circleZoom');
+    el.value = Math.max(Number(el.min), Number(el.value) - Number(el.step));
+    onZoomChange();
+}
+
+function toggleFullscreen(){
+    const wrap = document.getElementById('circleWrap');
+    if(!document.fullscreenElement){
+        wrap.requestFullscreen().catch(e => alert('Fullscreen failed: '+e.message));
+    } else {
+        document.exitFullscreen();
+    }
+}
+
+document.addEventListener('fullscreenchange', ()=>{
+    // when entering/exiting fullscreen we should resize the canvas CSS size to fill the wrapper
+    const canvas = document.getElementById('circleCanvas');
+    const wrap = document.getElementById('circleWrap');
+    // redraw using stored params if available
+    if(drawCircle._last) drawCircle();
+});
+
+// initial setup: draw once and set pinned height
+// initial setup: keep page layout normal; windows will be created from the sidebar when the user requests them
+window.addEventListener('load', ()=>{
+    updatePotionVisual();
+    updateSidebarToggleButton();
+    // no automatic windowing on load
+});
+
+function toggleSidebar(){
+    document.body.classList.toggle('sidebar-collapsed');
+    updateSidebarToggleButton();
+}
+
+function updateSidebarToggleButton(){
+    const btn = document.getElementById('sidebarToggleBtn');
+    if(!btn) return;
+    if(document.body.classList.contains('sidebar-collapsed')){
+        btn.textContent = '☰ Open Sidebar';
+    } else {
+        btn.textContent = '✕ Close sidebar';
+    }
+}
+
+/* Windowing system: convert existing .card elements into draggable/resizable windows
+   and populate the left sidebar with buttons to restore/minimize or clone windows. */
+(function(){
+    const container = document.querySelector('.container');
+    const prototypes = Array.from(container.querySelectorAll('.card'));
+    const sidebarList = document.getElementById('sidebarList');
+    let zIndexCounter = 2000;
+
+    function makeWindow(card, idx, protoId){
+        // create window wrapper
+        const win = document.createElement('div');
+        win.className = 'window';
+        win.style.left = (220 + idx*20) + 'px';
+        win.style.top = (40 + idx*20) + 'px';
+        win.style.width = card.offsetWidth + 'px';
+        win.style.height = Math.max(120, card.offsetHeight) + 'px';
+    win.dataset.cardName = card.querySelector('h2')?.textContent || ('Calc '+idx);
+    if(protoId) win.dataset.proto = protoId;
+
+        // header
+        const header = document.createElement('div'); header.className = 'win-header';
+        const title = document.createElement('div'); title.className = 'win-title'; title.textContent = win.dataset.cardName;
+    const controls = document.createElement('div'); controls.className = 'win-controls';
+    const minBtn = document.createElement('button'); minBtn.textContent = '_'; minBtn.title='Minimize';
+    controls.appendChild(minBtn);
+        header.appendChild(title); header.appendChild(controls);
+
+        const content = document.createElement('div'); content.className = 'win-content';
+        // move card content into content
+        content.appendChild(card);
+
+        const resizer = document.createElement('div'); resizer.className = 'resizer';
+
+        win.appendChild(header); win.appendChild(content); win.appendChild(resizer);
+    document.body.appendChild(win);
+
+    // wire per-window controls: map inline actions to scoped functions
+        function wireWindowControls(rootWin){
+            // helper to find inside this window
+            const q = (s)=> rootWin.querySelector(s);
+            // circle controls
+            if(q('#circleCanvas')){
+                // draw button -> drawCircleScoped
+                const drawBtn = rootWin.querySelector("button[onclick*='drawCircle']");
+                if(drawBtn){ drawBtn.removeAttribute('onclick'); drawBtn.addEventListener('click', ()=>drawCircleScoped(rootWin)); }
+                const zoomInBtn = rootWin.querySelector("button[onclick*='zoomIn']"); if(zoomInBtn){ zoomInBtn.removeAttribute('onclick'); zoomInBtn.addEventListener('click', ()=>zoomInScoped(rootWin)); }
+                const zoomOutBtn = rootWin.querySelector("button[onclick*='zoomOut']"); if(zoomOutBtn){ zoomOutBtn.removeAttribute('onclick'); zoomOutBtn.addEventListener('click', ()=>zoomOutScoped(rootWin)); }
+                const fsBtn = rootWin.querySelector("#circleFullscreen"); if(fsBtn){ fsBtn.removeAttribute('onclick'); fsBtn.addEventListener('click', ()=>toggleFullscreenScoped(rootWin)); }
+                const zoomRange = q('#circleZoom'); if(zoomRange){ zoomRange.removeAttribute('oninput'); zoomRange.addEventListener('input', ()=>onZoomChangeScoped(rootWin)); }
+
+                // panning for this canvas
+                const canvasEl = q('#circleCanvas');
+                (function(){
+                    let isP=false, lx=0, ly=0;
+                    canvasEl.style.cursor='grab';
+                    canvasEl.addEventListener('mousedown',(e)=>{ isP=true; lx=e.clientX; ly=e.clientY; canvasEl.style.cursor='grabbing'; rootWin._pan = rootWin._pan || {x:0,y:0,scale:1,user:false}; rootWin._pan.user = true; });
+                    window.addEventListener('mousemove',(e)=>{ if(!isP) return; const dx = e.clientX - lx; const dy = e.clientY - ly; lx=e.clientX; ly=e.clientY; rootWin._pan = rootWin._pan || {x:0,y:0,scale:1,user:false}; rootWin._pan.x += dx; rootWin._pan.y += dy; rootWin._pan.user = true; drawCircleScoped(rootWin); });
+                    window.addEventListener('mouseup',()=>{ if(!isP) return; isP=false; canvasEl.style.cursor='grab'; });
+                    canvasEl.addEventListener('touchstart',(e)=>{ if(e.touches.length!==1) return; isP=true; lx=e.touches[0].clientX; ly=e.touches[0].clientY; rootWin._pan = rootWin._pan || {x:0,y:0,scale:1,user:false}; rootWin._pan.user = true; }, {passive:true});
+                    canvasEl.addEventListener('touchmove',(e)=>{ if(!isP || e.touches.length!==1) return; const dx = e.touches[0].clientX - lx; const dy = e.touches[0].clientY - ly; lx=e.touches[0].clientX; ly=e.touches[0].clientY; rootWin._pan = rootWin._pan || {x:0,y:0,scale:1,user:false}; rootWin._pan.x += dx; rootWin._pan.y += dy; rootWin._pan.user = true; drawCircleScoped(rootWin); }, {passive:true});
+                    canvasEl.addEventListener('touchend',()=>{ isP=false; });
+                    canvasEl.addEventListener('dblclick',()=>{ rootWin._pan = {x:0,y:0,scale: rootWin._pan ? rootWin._pan.scale : 1, user:false}; drawCircleScoped(rootWin); });
+                })();
+            }
+
+            // whitelist controls
+            if(q('#wlList')){
+                const genBtn = rootWin.querySelector("button[onclick*='generateWhitelist']");
+                if(genBtn){ genBtn.removeAttribute('onclick'); genBtn.addEventListener('click', ()=>generateWhitelistScoped(rootWin)); }
+                const prevBtn = rootWin.querySelector("button[onclick*='previewWhitelist']");
+                if(prevBtn){ prevBtn.removeAttribute('onclick'); prevBtn.addEventListener('click', ()=>previewWhitelistScoped(rootWin)); }
+                const copyBtn = rootWin.querySelector("button[onclick*='copyWhitelist']");
+                if(copyBtn){ copyBtn.removeAttribute('onclick'); copyBtn.addEventListener('click', ()=>copyWhitelistScoped(rootWin)); }
+            }
+
+            // map other calculators' buttons to scoped functions
+            const netherBtn = rootWin.querySelector("button[onclick*='nether']"); if(netherBtn){ netherBtn.removeAttribute('onclick'); netherBtn.addEventListener('click', ()=>netherScoped(rootWin)); }
+            const overworldBtn = rootWin.querySelector("button[onclick*='overworld']"); if(overworldBtn){ overworldBtn.removeAttribute('onclick'); overworldBtn.addEventListener('click', ()=>overworldScoped(rootWin)); }
+            const chunkBtn = rootWin.querySelector("button[onclick*='chunk']"); if(chunkBtn){ chunkBtn.removeAttribute('onclick'); chunkBtn.addEventListener('click', ()=>chunkScoped(rootWin)); }
+                    const xpBtn = rootWin.querySelector("button[onclick*='xp']"); if(xpBtn){ xpBtn.removeAttribute('onclick'); xpBtn.addEventListener('click', ()=>xpScoped(rootWin)); }
+            const readBtn = rootWin.querySelector("button[onclick*='readLitematic']"); if(readBtn){ readBtn.removeAttribute('onclick'); readBtn.addEventListener('click', ()=>readLitematicScoped(rootWin)); }
+            const ticksBtn = rootWin.querySelector("button[onclick*='ticksToSeconds']"); if(ticksBtn){ ticksBtn.removeAttribute('onclick'); ticksBtn.addEventListener('click', ()=>ticksToSecondsScoped(rootWin)); }
+            const secsBtn = rootWin.querySelector("button[onclick*='secondsToTicks']"); if(secsBtn){ secsBtn.removeAttribute('onclick'); secsBtn.addEventListener('click', ()=>secondsToTicksScoped(rootWin)); }
+            const hopperBtn = rootWin.querySelector("button[onclick*='hopperToSeconds']"); if(hopperBtn){ hopperBtn.removeAttribute('onclick'); hopperBtn.addEventListener('click', ()=>hopperToSecondsScoped(rootWin)); }
+            const lookupBtn = rootWin.querySelector("button[onclick*='lookupUuids']"); if(lookupBtn){ lookupBtn.removeAttribute('onclick'); lookupBtn.addEventListener('click', ()=>lookupUuidsScoped(rootWin)); }
+            const clearCacheBtn = rootWin.querySelector("button[onclick*='clearUuidCache']"); if(clearCacheBtn){ clearCacheBtn.removeAttribute('onclick'); clearCacheBtn.addEventListener('click', ()=>clearUuidCacheScoped(rootWin)); }
+            const enchantBtn = rootWin.querySelector("button[onclick*='planEnchantments']"); if(enchantBtn){ enchantBtn.removeAttribute('onclick'); enchantBtn.addEventListener('click', ()=>planEnchantmentsScoped(rootWin)); }
+            const copyEnchantBtn = rootWin.querySelector("button[onclick*='copyEnchantPlan']"); if(copyEnchantBtn){ copyEnchantBtn.removeAttribute('onclick'); copyEnchantBtn.addEventListener('click', ()=>copyEnchantPlanScoped(rootWin)); }
+            const potionBtn = rootWin.querySelector("button[onclick*='generatePotionRecipe']"); if(potionBtn){ potionBtn.removeAttribute('onclick'); potionBtn.addEventListener('click', ()=>generatePotionRecipeScoped(rootWin)); }
+            const potionSelect = rootWin.querySelector('#potionType');
+            if(potionSelect){ potionSelect.removeAttribute('onchange'); potionSelect.addEventListener('change', ()=>updatePotionVisual(rootWin)); updatePotionVisual(rootWin); }
+            const beaconBtn = rootWin.querySelector("button[onclick*='beaconColorLookup']"); if(beaconBtn){ beaconBtn.removeAttribute('onclick'); beaconBtn.addEventListener('click', ()=>beaconColorLookupScoped(rootWin)); }
+            const beaconComboBtn = rootWin.querySelector("button[onclick*='beaconColorComboLookup']"); if(beaconComboBtn){ beaconComboBtn.removeAttribute('onclick'); beaconComboBtn.addEventListener('click', ()=>beaconColorComboLookupScoped(rootWin)); }
+        }
+        // wire the controls for this window (original card)
+        wireWindowControls(win);
+
+        // events: bring to front
+        win.addEventListener('mousedown', ()=>{ win.style.zIndex = ++zIndexCounter; });
+
+        // minimize
+        minBtn.addEventListener('click', ()=>{
+            win.style.display = 'none';
+            // update sidebar label if present
+            const sb = document.querySelector(`[data-proto='${win.dataset.proto}']`);
+            if(sb) sb.textContent = win.dataset.cardName + ' (min)';
+        });
+
+        // dragging
+        let dragging=false, dragStartX=0, dragStartY=0, startLeft=0, startTop=0;
+        header.addEventListener('mousedown', (e)=>{
+            dragging = true; dragStartX = e.clientX; dragStartY = e.clientY;
+            startLeft = parseInt(win.style.left,10) || 0; startTop = parseInt(win.style.top,10) || 0;
+            win.style.zIndex = ++zIndexCounter;
+            document.body.style.userSelect = 'none';
+        });
+        window.addEventListener('mousemove',(e)=>{
+            if(!dragging) return;
+            const dx = e.clientX - dragStartX; const dy = e.clientY - dragStartY;
+            win.style.left = (startLeft + dx) + 'px'; win.style.top = (startTop + dy) + 'px';
+        });
+        window.addEventListener('mouseup', ()=>{ dragging=false; document.body.style.userSelect='auto'; });
+
+        // resizing
+        let resizing=false, resStartX=0, resStartY=0, startW=0, startH=0;
+        resizer.addEventListener('mousedown',(e)=>{
+            resizing=true; resStartX=e.clientX; resStartY=e.clientY; startW=win.offsetWidth; startH=win.offsetHeight;
+            document.body.style.userSelect='none';
+            e.stopPropagation();
+        });
+        window.addEventListener('mousemove',(e)=>{
+            if(!resizing) return;
+            const nx = Math.max(200, startW + (e.clientX - resStartX));
+            const ny = Math.max(80, startH + (e.clientY - resStartY));
+            win.style.width = nx + 'px'; win.style.height = ny + 'px';
+            // if the window contains the circle canvas, adjust the internal wrapper
+            const wrap = win.querySelector('#circleWrap');
+            if(wrap){ wrap.style.width = (nx - 40) + 'px'; wrap.style.height = (ny - 90) + 'px'; drawCircleScoped(win); }
+        });
+        window.addEventListener('mouseup', ()=>{ resizing=false; document.body.style.userSelect='auto'; });
+
+        // store an id for sidebar linking
+        win._id = 'win' + Math.random().toString(36).slice(2,9);
+        return win;
+    }
+
+    function updateSidebar(){
+        sidebarList.innerHTML = '';
+        prototypes.forEach((proto,i)=>{
+            const protoId = proto.dataset.protoId = proto.dataset.protoId || ('proto'+i);
+            const btn = document.createElement('button');
+            btn.textContent = proto.querySelector('h2')?.textContent || ('Calc '+i);
+            btn.dataset.proto = protoId;
+            btn.addEventListener('click', ()=>{
+                const target = document.querySelector(`.card[data-proto-id='${protoId}']`);
+                if(target){
+                    target.scrollIntoView({behavior:'smooth', block:'start'});
+                    target.classList.add('sidebar-highlight');
+                    window.setTimeout(()=> target.classList.remove('sidebar-highlight'), 1200);
+                }
+            });
+            sidebarList.appendChild(btn);
+        });
+    }
+
+    // populate sidebar with prototypes (no auto-convert)
+    prototypes.forEach((proto, i)=>{});
+    updateSidebar();
+
+})();
+
+</script>
+
+</body>
+
+</html>
