@@ -176,7 +176,7 @@ h1{ color:var(--light); }
     box-sizing:border-box;
 }
 
-input{
+input, select{
     width:100%;
     padding:10px;
     margin:5px 0;
@@ -242,6 +242,21 @@ button:hover{ background:var(--gold); }
 
 footer{ text-align:center; padding:20px; color:#777; }
 
+/* Custom additions for the Live Gradient Preview pane */
+.preview-pane {
+    background: #000000;
+    border: 1px solid #333;
+    padding: 14px;
+    border-radius: 6px;
+    font-family: monospace;
+    font-size: 16px;
+    letter-spacing: 0.5px;
+    margin-top: 10px;
+    min-height: 45px;
+    word-break: break-all;
+    text-shadow: 2px 2px 0px #222;
+}
+
 </style>
 
 </head>
@@ -266,6 +281,56 @@ footer{ text-align:center; padding:20px; color:#777; }
 </div>
 
 <div class="container">
+
+    <!-- NEW FEATURE: RGB Gradient Generator Card -->
+    <div class="card">
+        <h2>🏳️‍🌈 RGB Text Gradient Generator</h2>
+        <p>Create smooth, multi-color hexadecimal gradient text outputs optimized for chat strings, nicknames, configurations, or MiniMessage templates.</p>
+        
+        <input id="rgbText" placeholder="Enter custom message here..." value="Eclipse Tools" oninput="generateGradient()">
+        
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px;">
+            <div>
+                <label style="font-size:12px; color:var(--light)">Start Color:</label>
+                <div style="display:flex; gap:6px;">
+                    <input type="color" id="rgbColor1" value="#8F82C7" style="width:45px; padding:2px; height:38px;" oninput="document.getElementById('rgbHex1').value = this.value.toUpperCase(); generateGradient();">
+                    <input id="rgbHex1" value="#8F82C7" placeholder="#HEX" oninput="if(this.value.length===7){document.getElementById('rgbColor1').value=this.value; generateGradient();}">
+                </div>
+            </div>
+            <div>
+                <label style="font-size:12px; color:var(--light)">End Color:</label>
+                <div style="display:flex; gap:6px;">
+                    <input type="color" id="rgbColor2" value="#CDA47D" style="width:45px; padding:2px; height:38px;" oninput="document.getElementById('rgbHex2').value = this.value.toUpperCase(); generateGradient();">
+                    <input id="rgbHex2" value="#CDA47D" placeholder="#HEX" oninput="if(this.value.length===7){document.getElementById('rgbColor2').value=this.value; generateGradient();}">
+                </div>
+            </div>
+        </div>
+
+        <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:12px; font-size:13px;">
+            <label><input type="checkbox" id="rgbBold" onchange="generateGradient()" style="width:auto; margin-right:4px;"> <strong>Bold</strong></label>
+            <label><input type="checkbox" id="rgbItalic" onchange="generateGradient()" style="width:auto; margin-right:4px;"> <em>Italic</em></label>
+            <label><input type="checkbox" id="rgbUnderline" onchange="generateGradient()" style="width:auto; margin-right:4px;"> <u>Underline</u></label>
+            <label><input type="checkbox" id="rgbStrike" onchange="generateGradient()" style="width:auto; margin-right:4px;"> <s>Strike</s></label>
+        </div>
+
+        <label style="display:block; margin-top:12px; font-size:12px; color:var(--light);">Output Format Type:</label>
+        <select id="rgbFormat" onchange="generateGradient()">
+            <option value="minimessage">MiniMessage (&lt;gradient:#ff0000:#00ff00&gt;)</option>
+            <option value="spigot">Spigot / Bungee Hex (&#47;&amp;#RRGGBB)</option>
+            <option value="essentials">EssentialsX (&amp;x&amp;r&amp;r&amp;g&amp;g&amp;b&amp;b)</option>
+            <option value="legacy">Legacy Ampersand Chat Code (&amp;#RRGGBB)</option>
+        </select>
+
+        <div style="margin-top:12px;">
+            <span style="font-size:12px; color:var(--light);">Live Game Chat Preview:</span>
+            <div id="gradientPreview" class="preview-pane"></div>
+        </div>
+
+        <div style="display:flex; gap:8px; margin-top:10px;">
+            <button onclick="copyGradientOutput()" style="margin-top:0; width:100%;">Copy Output String</button>
+        </div>
+        <div class="output" id="gradientOut" style="white-space:pre-wrap; font-family:monospace; font-size:12px; overflow-x:auto;"></div>
+    </div>
 
     <div class="card">
         <h2>🌌 Nether Portal Calculator</h2>
@@ -314,7 +379,7 @@ footer{ text-align:center; padding:20px; color:#777; }
     </div>
 
     <div class="card">
-        <h2>�️ Whitelist Generator</h2>
+        <h2>📋 Whitelist Generator</h2>
         <p>Paste one player per line. Optionally use "name,uuid" per line. Leave UUID empty to auto-generate deterministic offline-style UUIDs.</p>
         <textarea id="wlList" placeholder="one player per line\nor: name,uuid" style="width:100%;height:110px;padding:10px;background:#0c0a10;color:white;border:1px solid var(--purple);border-radius:6px"></textarea>
         <label style="display:block;margin-top:8px"><input type="checkbox" id="wlGenUuid"> Generate deterministic UUIDs for names without UUIDs</label>
@@ -427,7 +492,6 @@ footer{ text-align:center; padding:20px; color:#777; }
                 <button onclick="drawCircle()">Redraw</button>
             </div>
         </div>
-    <!-- textual block list removed; coordinates shown on graph instead -->
     </div>
 </div>
 
@@ -465,8 +529,113 @@ function formatHexCode(value){
     return hex ? '#' + hex.toUpperCase() : '';
 }
 
+// --- NEW FEATURE: RGB Text Gradient Generation Logic ---
+function hexToRgb(hex) {
+    const cleaned = normalizeHexCode(hex);
+    return {
+        r: parseInt(cleaned.slice(0, 2), 16),
+        g: parseInt(cleaned.slice(2, 4), 16),
+        b: parseInt(cleaned.slice(4, 6), 16)
+    };
+}
+
+function rgbToHex(r, g, b) {
+    return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
+}
+
+function generateGradient() {
+    generateGradientScoped(document);
+}
+
+function generateGradientScoped(root) {
+    const q = (sel) => find(root, sel);
+    const text = q('#rgbText')?.value || '';
+    const hex1 = q('#rgbHex1')?.value || '#8F82C7';
+    const hex2 = q('#rgbHex2')?.value || '#CDA47D';
+    const isBold = q('#rgbBold')?.checked;
+    const isItalic = q('#rgbItalic')?.checked;
+    const isUnderline = q('#rgbUnderline')?.checked;
+    const isStrike = q('#rgbStrike')?.checked;
+    const format = q('#rgbFormat')?.value || 'minimessage';
+    
+    const previewDiv = q('#gradientPreview');
+    const outputDiv = q('#gradientOut');
+    
+    if (!text) {
+        if (previewDiv) previewDiv.innerHTML = '';
+        if (outputDiv) outputDiv.textContent = '';
+        return;
+    }
+
+    const c1 = hexToRgb(hex1);
+    const c2 = hexToRgb(hex2);
+    
+    let formatCodes = '';
+    let htmlStyleOpen = '';
+    let htmlStyleClose = '';
+
+    if (isBold) { formatCodes += '&l'; htmlStyleOpen += '<strong>'; htmlStyleClose = '</strong>' + htmlStyleClose; }
+    if (isItalic) { formatCodes += '&o'; htmlStyleOpen += '<em>'; htmlStyleClose = '</em>' + htmlStyleClose; }
+    if (isUnderline) { formatCodes += '&n'; htmlStyleOpen += '<u>'; htmlStyleClose = '</u>' + htmlStyleClose; }
+    if (isStrike) { formatCodes += '&m'; htmlStyleOpen += '<s>'; htmlStyleClose = '</s>' + htmlStyleClose; }
+
+    let resultString = '';
+    let previewHTML = '';
+
+    if (format === 'minimessage') {
+        let tagOpen = `<gradient:${hex1}:${hex2}>`;
+        let tagClose = `</gradient>`;
+        let extraTags = '';
+        if (isBold) extraTags += '<bold>';
+        if (isItalic) extraTags += '<italic>';
+        if (isUnderline) extraTags += '<underline>';
+        if (isStrike) extraTags += '<strikethrough>';
+        resultString = tagOpen + extraTags + text + tagClose;
+    }
+
+    for (let i = 0; i < text.length; i++) {
+        let ratio = text.length > 1 ? i / (text.length - 1) : 0;
+        let r = Math.round(c1.r + ratio * (c2.r - c1.r));
+        let g = Math.round(c1.g + ratio * (c2.g - c1.g));
+        let b = Math.round(c1.b + ratio * (c2.b - c1.b));
+        let stepHex = rgbToHex(r, g, b);
+
+        previewHTML += `<span style="color:${stepHex}">${htmlStyleOpen}${text[i]}${htmlStyleClose}</span>`;
+
+        if (format !== 'minimessage') {
+            if (format === 'spigot') {
+                resultString += `&#${stepHex.substring(1)}${formatCodes}${text[i]}`;
+            } else if (format === 'essentials') {
+                let essHex = stepHex.substring(1).split('').map(ch => '&' + ch).join('');
+                resultString += `&x${essHex}${formatCodes}${text[i]}`;
+            } else if (format === 'legacy') {
+                resultString += `&#${stepHex.substring(1)}${text[i]}`;
+            }
+        }
+    }
+
+    if (previewDiv) previewDiv.innerHTML = previewHTML;
+    if (outputDiv) outputDiv.textContent = resultString;
+}
+
+function copyGradientOutput() {
+    const out = document.getElementById('gradientOut'); 
+    if(!out) return; 
+    const text = out.textContent || '';
+    if(!text) return; 
+    navigator.clipboard?.writeText(text).then(()=>alert('Gradient output string copied to clipboard!'), ()=>alert('Copy failed'));
+}
+
+function copyGradientOutputScoped(root) {
+    const q = (s) => find(root, s);
+    const out = q('#gradientOut'); 
+    if(!out) return; 
+    const text = out.textContent || '';
+    if(!text) return; 
+    navigator.clipboard?.writeText(text).then(()=>{ if(root===document) alert('Gradient output string copied!'); });
+}
+
 function nether(){
-    // kept for backward compatibility
     netherScoped(document);
 }
 
@@ -520,10 +689,6 @@ function xpScoped(root){
         else if(i < 31) total += 5*i - 38;
         else total += 9*i - 158;
     }
-    // Provide breakdowns for common XP sources
-    // Assumptions (can be tuned):
-    // - Enderman: 5 XP per kill (base 5)
-    // - Nether Quartz Ore: average ~3.5 XP per break (range 2-5, 3.5 avg)
     const xpPerEnderman = 5;
     const xpPerQuartz = 3.5;
     const endermenNeeded = Math.ceil(total / xpPerEnderman);
@@ -663,8 +828,6 @@ function beaconColorComboLookupScoped(root){
     if(out){ out.innerHTML = ''; }
 }
 
-// --- Whitelist generator helpers ---
-// deterministic UUID v4-like from string (not RFC-perfect but stable)
 function fnv1a32(str){
     let h = 0x811c9dc5;
     for(let i=0;i<str.length;i++){
@@ -674,13 +837,11 @@ function fnv1a32(str){
     return h >>> 0;
 }
 function uuidFromString(str){
-    // produce 16 bytes from two 32-bit FNV hashes
     const a = fnv1a32(str + '\x00');
     const b = fnv1a32(str + '\x01');
     const c = fnv1a32(str + '\x02');
     const d = fnv1a32(str + '\x03');
     const toHex = (n, len)=> n.toString(16).padStart(len,'0');
-    // assemble UUID-like hex
     const hex = toHex(a,8) + toHex(b,8) + toHex(c,8) + toHex(d,8);
     return hex.slice(0,8) + '-' + hex.slice(8,12) + '-' + hex.slice(12,16) + '-' + hex.slice(16,20) + '-' + hex.slice(20,32);
 }
@@ -703,9 +864,7 @@ function generateWhitelist(){
     const text = document.getElementById('wlList').value || '';
     const gen = !!document.getElementById('wlGenUuid').checked;
     const entries = buildWhitelistFromText(text, gen);
-    // format to standard mojang whitelist: array of {"uuid":"...","name":"..."}
     const json = JSON.stringify(entries.map(e=>({uuid:e.uuid, name:e.name})), null, 2);
-    // download as whitelist.json
     const blob = new Blob([json], {type:'application/json'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a'); a.href = url; a.download = 'whitelist.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
@@ -720,8 +879,6 @@ function previewWhitelist(){
     const out = document.getElementById('wlOut'); if(out) out.textContent = json;
 }
 
-// Lookup Minecraft UUIDs by player name using Mojang API (name -> uuid)
-// Reference: use a bulk lookup style flow with fallback services and clear output.
 async function lookupUuids(){ return lookupUuidsScoped(document); }
 async function lookupUuidsScoped(root){
     const q = (s)=> find(root, s);
@@ -813,39 +970,32 @@ async function lookupUuidsScoped(root){
     out && (out.textContent = `Lookup complete. ${foundCount} found, ${missingCount} missing.\n${json}`);
 }
 
-// --- simple localStorage cache helpers ---
 function tryGetCache(key){ try{ const raw = localStorage.getItem(key); if(!raw) return null; const obj = JSON.parse(raw); if(!obj.v) return null; if(obj.e && Date.now() > obj.e){ localStorage.removeItem(key); return null; } return obj.v; } catch(e){ return null; } }
 function trySetCache(key, value, ttl){ try{ const obj = { v: value }; if(ttl) obj.e = Date.now() + ttl; localStorage.setItem(key, JSON.stringify(obj)); } catch(e){} }
 
 function clearUuidCache(){ clearUuidCacheScoped(document); }
 function clearUuidCacheScoped(root){
     const out = find(root, '#wlOut');
-    try{ const keys = Object.keys(localStorage); for(const k of keys){ if(k.startsWith('uuidcache:')) localStorage.removeItem(k); } if(out) out.textContent = 'UUID cache cleared.'; } catch(e){ /* ignore */ } }
+    try{ const keys = Object.keys(localStorage); for(const k of keys){ if(k.startsWith('uuidcache:')) localStorage.removeItem(k); } if(out) out.textContent = 'UUID cache cleared.'; } catch(e){ } }
 
 function copyWhitelist(){
     const out = document.getElementById('wlOut'); if(!out) return; const text = out.textContent || '';
     if(!text) return; navigator.clipboard?.writeText(text).then(()=>alert('Whitelist JSON copied to clipboard'), ()=>alert('Copy failed'));
 }
 
-// scoped versions for cloned windows
 function generateWhitelistScoped(root){ const q=(s)=> find(root, s); const text = q('#wlList')?.value || ''; const gen = !!q('#wlGenUuid')?.checked; const entries = buildWhitelistFromText(text, gen); const json = JSON.stringify(entries.map(e=>({uuid:e.uuid, name:e.name})), null,2); const out = q('#wlOut'); if(out) out.textContent = json; const blob = new Blob([json], {type:'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'whitelist.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }
 function previewWhitelistScoped(root){ const q=(s)=> find(root, s); const text = q('#wlList')?.value||''; const gen = !!q('#wlGenUuid')?.checked; const entries = buildWhitelistFromText(text, gen); const json = JSON.stringify(entries.map(e=>({uuid:e.uuid, name:e.name})), null,2); const out = q('#wlOut'); if(out) out.textContent = json; }
 function copyWhitelistScoped(root){ const q=(s)=> find(root, s); const out = q('#wlOut'); if(!out) return; const text = out.textContent || ''; if(!text) return; navigator.clipboard?.writeText(text).then(()=>{ if(root===document) alert('Whitelist JSON copied'); }, ()=>{ if(root===document) alert('Copy failed'); }); }
 
-// --- Ticks to seconds converter ---
 function ticksToSeconds(){ ticksToSecondsScoped(document); }
 function ticksToSecondsScoped(root){ const q=(s)=> find(root, s); const val = Number(q('#ticksInput')?.value || 0); const seconds = val / 20; const out = q('#ticksOut'); if(out) out.innerHTML = `${val} ticks = ${seconds} seconds`; }
 
-// --- Seconds to ticks converter ---
 function secondsToTicks(){ secondsToTicksScoped(document); }
 function secondsToTicksScoped(root){ const q=(s)=> find(root, s); const secs = Number(q('#secondsInput')?.value || 0); const ticks = Math.round(secs * 20); const out = q('#ticksOut'); if(out) out.innerHTML = `${secs} seconds ≈ ${ticks} ticks`; }
 
-// --- Hopper clock items -> seconds ---
 function hopperToSeconds(){ hopperToSecondsScoped(document); }
 function hopperToSecondsScoped(root){ const q=(s)=> find(root, s); const items = Number(q('#hopperItems')?.value || 0); const ticksPerItem = Number(q('#hopperTicksPerItem')?.value || 8) || 8; const totalTicks = items * ticksPerItem; const seconds = totalTicks / 20; const out = q('#hopperOut'); if(out) out.innerHTML = `${items} items × ${ticksPerItem} ticks/item = ${totalTicks} ticks → ${seconds} seconds`; }
 
-// --- Enchantment planner ---
-// Minimal offline planner: validates names/levels and flags common incompatibilities.
 const ENCHANT_DB = {
     'sharpness': {max:5, type:'weapon'},
     'smite': {max:5, type:'weapon'},
@@ -897,28 +1047,10 @@ function planEnchantmentsScoped(root){ const q=(s)=> find(root, s); const text =
 }
 
 function copyEnchantPlan(){ const out = document.getElementById('enchantOut'); if(!out) return; const text = out.textContent || ''; if(!text) return; navigator.clipboard?.writeText(text).then(()=>alert('Plan copied'), ()=>alert('Copy failed')); }
-
 function copyEnchantPlanScoped(root){ const q=(s)=> find(root, s); const out = q('#enchantOut'); if(!out) return; const text = out.textContent || ''; if(!text) return; navigator.clipboard?.writeText(text).then(()=>{ if(root===document) alert('Plan copied'); }, ()=>{ if(root===document) alert('Copy failed'); }); }
 
 const BREWING_ICONS = {
-    'Water Bottle': '🧪',
-    'Nether Wart': '🌿',
-    'Glowstone Dust': '✨',
-    'Redstone Dust': '🔷',
-    'Golden Carrot': '🥕',
-    'Fermented Spider Eye': '🕷️',
-    'Magma Cream': '🔥',
-    'Pufferfish': '🐡',
-    'Glistering Melon Slice': '🍈',
-    'Ghast Tear': '💧',
-    'Blaze Powder': '🔥',
-    'Sugar': '🍬',
-    'Rabbit\'s Foot': '🐇',
-    'Turtle Shell': '🐢',
-    'Phantom Membrane': '🪶',
-    'Spider Eye': '🕸️',
-    'Dragon\'s Breath': '🐉',
-    'Gunpowder': '💥'
+    'Water Bottle': '🧪', 'Nether Wart': '🌿', 'Glowstone Dust': '✨', 'Redstone Dust': '🔷', 'Golden Carrot': '🥕', 'Fermented Spider Eye': '🕷️', 'Magma Cream': '🔥', 'Pufferfish': '🐡', 'Glistering Melon Slice': '🍈', 'Ghast Tear': '💧', 'Blaze Powder': '🔥', 'Sugar': '🍬', 'Rabbit\'s Foot': '🐇', 'Turtle Shell': '🐢', 'Phantom Membrane': '🪶', 'Spider Eye': '🕸️', 'Dragon\'s Breath': '🐉', 'Gunpowder': '💥'
 };
 
 const POTION_RECIPES = {
@@ -994,23 +1126,15 @@ function generatePotionRecipeScoped(root){
     }
     let nextStep = info.prep.length + 1;
     if(strong){
-        if(info.strong){
-            lines.push(`${nextStep++}. ✨ Glowstone Dust → Strong ${info.label}`);
-        } else {
-            lines.push(`${nextStep++}. Strong variant is not available for this potion; skip Glowstone Dust.`);
-        }
+        if(info.strong){ lines.push(`${nextStep++}. ✨ Glowstone Dust → Strong ${info.label}`); } 
+        else { lines.push(`${nextStep++}. Strong variant is not available for this potion; skip Glowstone Dust.`); }
     }
     if(long){
-        if(info.long){
-            lines.push(`${nextStep++}. 🔷 Redstone Dust → Long ${info.label}`);
-        } else {
-            lines.push(`${nextStep++}. Long variant is not available for this potion; skip Redstone Dust.`);
-        }
+        if(info.long){ lines.push(`${nextStep++}. 🔷 Redstone Dust → Long ${info.label}`); } 
+        else { lines.push(`${nextStep++}. Long variant is not available for this potion; skip Redstone Dust.`); }
     }
     if(lingering){
-        if(!splash){
-            lines.push(`${nextStep++}. 💥 Gunpowder → Splash potion`);
-        }
+        if(!splash){ lines.push(`${nextStep++}. 💥 Gunpowder → Splash potion`); }
         lines.push(`${nextStep++}. 🐉 Dragon's Breath → Lingering potion`);
     } else if(splash){
         lines.push(`${nextStep++}. 💥 Gunpowder → Splash potion`);
@@ -1024,165 +1148,92 @@ function drawCircle(){
     const wVal = document.getElementById('circleWidth').value.trim();
     const hVal = document.getElementById('circleHeight').value.trim();
     const filled = !!document.getElementById('circleFilled').checked;
-    // fixed pixels-per-block; removed adjustable UI control
     const cellSize = 12;
     const canvas = document.getElementById('circleCanvas');
     let widthBlocks, heightBlocks;
 
     if(rVal !== ''){
         const r = Math.max(1, Math.round(Number(rVal)));
-        widthBlocks = heightBlocks = r*2 + 1; // include center
+        widthBlocks = heightBlocks = r*2 + 1;
     } else if(wVal !== '' || hVal !== ''){
         widthBlocks = Math.max(1, Math.round(Number(wVal) || 0));
         heightBlocks = Math.max(1, Math.round(Number(hVal) || 0));
         if(!widthBlocks || !heightBlocks){ alert('Enter valid width and height.'); return; }
     } else { alert('Enter a radius or width/height.'); return; }
 
-    // Ensure odd dimensions to center the circle
     if(widthBlocks % 2 === 0) widthBlocks++;
     if(heightBlocks % 2 === 0) heightBlocks++;
 
-    const cols = widthBlocks;
-    const rows = heightBlocks;
-    // margins (in pixels before scaling)
-    const baseMarginLeft = 40;
-    const baseMarginTop = 8;
-    const baseMarginRight = 8;
-    const baseMarginBottom = 36;
-
-    // Fit into wrapper size while preserving aspect and margins
+    const cols = widthBlocks; const rows = heightBlocks;
+    const baseMarginLeft = 40; const baseMarginTop = 8; const baseMarginRight = 8; const baseMarginBottom = 36;
     const wrap = document.getElementById('circleWrap');
-    // default the wrapper to a 1:1 square so the window is square by default
-    // but don't override an explicit inline width/height set by the user (resizing)
     if(wrap && !wrap.style.width && !wrap.style.height) wrap.style.aspectRatio = '1 / 1';
-    // measure wrapper size
     let wrapW = wrap ? wrap.clientWidth : 400;
     let wrapH = wrap ? wrap.clientHeight : 400;
-
-    // desired base canvas size
     const baseW = cols * cellSize + baseMarginLeft + baseMarginRight;
     const baseH = rows * cellSize + baseMarginTop + baseMarginBottom;
 
-    // user zoom multiplier (1 = fit scale)
     const userZoom = Number(document.getElementById('circleZoom')?.value) || 1;
-    // compute fit when wrapper is square
     const fitScaleSquare = Math.min(wrapW / baseW, wrapH / baseH);
     let chosenScale = fitScaleSquare;
-    // try switching wrapper to the native cols:rows ratio; if that improves fit, keep it
     if(wrap && cols > 0 && rows > 0){
-        if(!wrap.style.width && !wrap.style.height){
-            wrap.style.aspectRatio = cols + ' / ' + rows;
-        }
+        if(!wrap.style.width && !wrap.style.height){ wrap.style.aspectRatio = cols + ' / ' + rows; }
         const wrapW2 = wrap.clientWidth; const wrapH2 = wrap.clientHeight;
         const fitScaleAlt = Math.min(wrapW2 / baseW, wrapH2 / baseH);
-        if(fitScaleAlt > fitScaleSquare + 0.01){ // small threshold
-            chosenScale = fitScaleAlt; wrapW = wrapW2; wrapH = wrapH2;
-        } else {
-            // revert to square (only if we control aspect)
+        if(fitScaleAlt > fitScaleSquare + 0.01){ chosenScale = fitScaleAlt; wrapW = wrapW2; wrapH = wrapH2; } 
+        else {
             if(!wrap.style.width && !wrap.style.height) wrap.style.aspectRatio = '1 / 1';
-            wrapW = wrap.clientWidth; wrapH = wrap.clientHeight;
-            chosenScale = fitScaleSquare;
+            wrapW = wrap.clientWidth; wrapH = wrap.clientHeight; chosenScale = fitScaleSquare;
         }
     }
     const scale = chosenScale * userZoom;
+    const canvasW = Math.round(baseW * scale); const canvasH = Math.round(baseH * scale);
+    canvas.width = canvasW; canvas.height = canvasH;
+    canvas.style.width = canvasW + 'px'; canvas.style.height = canvasH + 'px';
+    wrap.style.display = 'flex'; wrap.style.justifyContent = 'center'; wrap.style.alignItems = 'center';
+    const ctx = canvas.getContext('2d'); ctx.clearRect(0,0,canvas.width,canvas.height);
 
-    // calculate canvas size while preserving aspect ratio
-    const canvasW = Math.round(baseW * scale);
-    const canvasH = Math.round(baseH * scale);
-
-    // set canvas internal resolution
-    canvas.width = canvasW;
-    canvas.height = canvasH;
-    // set CSS size to the same pixel size so the browser doesn't stretch it
-    canvas.style.width = canvasW + 'px';
-    canvas.style.height = canvasH + 'px';
-    // center canvas inside wrapper
-    wrap.style.display = 'flex';
-    wrap.style.justifyContent = 'center';
-    wrap.style.alignItems = 'center';
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-
-    // scaled margins and cell size (base values before applying pan)
     const marginLeftBase = Math.round(baseMarginLeft * scale);
     const marginTopBase = Math.round(baseMarginTop * scale);
-    const marginRight = Math.round(baseMarginRight * scale);
-    const marginBottom = Math.round(baseMarginBottom * scale);
     const sCell = cellSize * scale;
     
-    // handle pan (pixels). If a previous pan exists from a different scale, rescale it
     let panX = 0, panY = 0;
-    // initialize pan state
     drawCircle._pan = drawCircle._pan || { x:0, y:0, scale: scale, user:false };
     if(drawCircle._pan){
-        // rescale previous pan to current scale
         if(drawCircle._pan.scale && drawCircle._pan.scale !== scale){
             drawCircle._pan.x = drawCircle._pan.x * (scale / drawCircle._pan.scale);
             drawCircle._pan.y = drawCircle._pan.y * (scale / drawCircle._pan.scale);
         }
-        panX = drawCircle._pan.x || 0;
-        panY = drawCircle._pan.y || 0;
+        panX = drawCircle._pan.x || 0; panY = drawCircle._pan.y || 0;
     }
 
-    // center (in block coordinates) - required for auto-centering math
-    const cx = (cols-1)/2;
-    const cy = (rows-1)/2;
-    // normalized ellipse radii
-    const rx = (cols-1)/2;
-    const ry = (rows-1)/2;
+    const cx = (cols-1)/2; const cy = (rows-1)/2; const rx = (cols-1)/2; const ry = (rows-1)/2;
 
-    // auto-center the circle into the wrapper unless the user has manually panned
-    const marginLeftUnclamped = marginLeftBase + Math.round(panX);
-    const marginTopUnclamped = marginTopBase + Math.round(panY);
-    let marginLeft = marginLeftUnclamped;
-    let marginTop = marginTopUnclamped;
+    let marginLeft = marginLeftBase + Math.round(panX);
+    let marginTop = marginTopBase + Math.round(panY);
     if(!drawCircle._pan.user){
-        // center so grid sits centered in wrapper area
         marginLeft = Math.round((canvas.width - cols*sCell)/2) - Math.round((cols-1)/2*sCell - cx*sCell) || marginLeftBase;
-        // place origin row such that bottom aligns with bottom margin
         marginTop = Math.round((canvas.height - rows*sCell)/2) - Math.round((rows-1)/2*sCell - cy*sCell) || marginTopBase;
-        // update pan state to reflect calculated margins
         drawCircle._pan.x = marginLeft - marginLeftBase; drawCircle._pan.y = marginTop - marginTopBase;
     }
 
-    // clamp panning so grid remains at least partly visible
-    function clampPanValues(mLeft, mTop){
-        const minLeft = Math.min(0, canvas.width - (cols*sCell + baseMarginLeft + baseMarginRight));
-        const maxLeft = Math.max(0, canvas.width - baseMarginLeft - baseMarginRight - cols*sCell);
-        const minTop = Math.min(0, canvas.height - (rows*sCell + baseMarginTop + baseMarginBottom));
-        const maxTop = Math.max(0, canvas.height - baseMarginTop - baseMarginBottom - rows*sCell);
-        return [Math.max(minLeft, Math.min(maxLeft, mLeft)), Math.max(minTop, Math.min(maxTop, mTop))];
-    }
-    [marginLeft, marginTop] = clampPanValues(marginLeft, marginTop);
+    const minLeft = Math.min(0, canvas.width - (cols*sCell + baseMarginLeft + baseMarginRight));
+    const maxLeft = Math.max(0, canvas.width - baseMarginLeft - baseMarginRight - cols*sCell);
+    const minTop = Math.min(0, canvas.height - (rows*sCell + baseMarginTop + baseMarginBottom));
+    const maxTop = Math.max(0, canvas.height - baseMarginTop - baseMarginBottom - rows*sCell);
+    [marginLeft, marginTop] = [Math.max(minLeft, Math.min(maxLeft, marginLeft)), Math.max(minTop, Math.min(maxTop, marginTop))];
 
-    // center and radii already computed above
-
-    // draw grid background (offset by margins)
-    ctx.fillStyle = '#0c0a10';
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.strokeStyle = '#222';
-    ctx.lineWidth = 1;
-    for(let x=0;x<=cols;x++){
-        const px = marginLeft + x*sCell;
-        ctx.beginPath(); ctx.moveTo(px,marginTop); ctx.lineTo(px,marginTop + rows*sCell); ctx.stroke();
-    }
-    for(let y=0;y<=rows;y++){
-        const py = marginTop + y*sCell;
-        ctx.beginPath(); ctx.moveTo(marginLeft,py); ctx.lineTo(marginLeft + cols*sCell,py); ctx.stroke();
-    }
+    ctx.fillStyle = '#0c0a10'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.strokeStyle = '#222'; ctx.lineWidth = 1;
+    for(let x=0;x<=cols;x++){ const px = marginLeft + x*sCell; ctx.beginPath(); ctx.moveTo(px,marginTop); ctx.lineTo(px,marginTop + rows*sCell); ctx.stroke(); }
+    for(let y=0;y<=rows;y++){ const py = marginTop + y*sCell; ctx.beginPath(); ctx.moveTo(marginLeft,py); ctx.lineTo(marginLeft + cols*sCell,py); ctx.stroke(); }
 
     const blocks = [];
-    // evaluate each block center whether it's inside the ellipse
-    // helper to test if a grid cell center is inside the normalized ellipse
-    function isInsideAt(c, r){
-        const nx = (c - cx) / rx; const ny = (r - cy) / ry; return (nx*nx + ny*ny) <= 1.0001;
-    }
+    function isInsideAt(c, r){ const nx = (c - cx) / rx; const ny = (r - cy) / ry; return (nx*nx + ny*ny) <= 1.0001; }
     for(let row=0; row<rows; row++){
         for(let col=0; col<cols; col++){
-            if(filled){
-                if(!isInsideAt(col, row)) continue;
-            } else {
-                // outline: only draw cells that are inside and have at least one neighbor outside
+            if(filled){ if(!isInsideAt(col, row)) continue; } 
+            else {
                 if(!isInsideAt(col, row)) continue;
                 let neighborOutside = false;
                 for(let oy=-1; oy<=1 && !neighborOutside; oy++){
@@ -1195,46 +1246,30 @@ function drawCircle(){
                 }
                 if(!neighborOutside) continue;
             }
-            // fill cell
             ctx.fillStyle = 'rgba(143,130,199,0.95)';
             ctx.fillRect(marginLeft + col*sCell+1, marginTop + row*sCell+1, Math.max(1, sCell-2), Math.max(1, sCell-2));
-            // coordinate relative to bottom-left origin: (0,0) at bottom-left
             blocks.push([col, rows - 1 - row]);
         }
     }
-    // draw origin marker at bottom-left cell center
     ctx.strokeStyle = 'rgba(205,164,125,0.9)';
-    const originX = marginLeft + 0*sCell + sCell/2;
-    const originY = marginTop + (rows-1)*sCell + sCell/2;
+    const originX = marginLeft + 0*sCell + sCell/2; const originY = marginTop + (rows-1)*sCell + sCell/2;
     ctx.beginPath(); ctx.moveTo(originX-6*scale, originY); ctx.lineTo(originX+6*scale, originY); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(originX, originY-6*scale); ctx.lineTo(originX, originY+6*scale); ctx.stroke();
 
-    // draw numeric axis ticks along bottom (X) and left (Z)
-    ctx.fillStyle = 'white';
-    ctx.font = Math.max(8, Math.floor(sCell*0.35)) + 'px sans-serif';
-    // X labels on bottom
+    ctx.fillStyle = 'white'; ctx.font = Math.max(8, Math.floor(sCell*0.35)) + 'px sans-serif';
     ctx.textAlign = 'center'; ctx.textBaseline = 'top';
     for(let col=0; col<cols; col++){
-        const gx = col; // X from 0..cols-1, bottom-left origin
-        const tx = marginLeft + col*sCell + sCell/2;
-        const ty = marginTop + rows*sCell + 4;
+        const gx = col; const tx = marginLeft + col*sCell + sCell/2; const ty = marginTop + rows*sCell + 4;
         ctx.fillText(gx, tx, ty);
     }
-    // Y labels on left
     ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
     for(let row=0; row<rows; row++){
-        const gz = rows - 1 - row; // Z from 0 at bottom to rows-1 at top
-        const ty = marginTop + row*sCell + sCell/2;
-        const tx = marginLeft - 6;
+        const gz = rows - 1 - row; const ty = marginTop + row*sCell + sCell/2; const tx = marginLeft - 6;
         ctx.fillText(gz, tx, ty);
     }
 
-    // store last draw params for redraw when toggling fullscreen
     drawCircle._last = { rVal, wVal, hVal, filled, cellSize };
-    // store current scale so pan can be rescaled when zoom/fullscreen changes
     drawCircle._pan.scale = scale;
-
-    // after drawing, ensure the page content is pushed below the fixed header
     updatePinnedHeight();
 }
 
@@ -1242,20 +1277,14 @@ function onZoomChange(){
     const label = document.getElementById('zoomLabel');
     const val = Number(document.getElementById('circleZoom').value);
     label.textContent = Math.round(val*100) + '%';
-    // live update
     drawCircle();
 }
 
-// adjust body top padding to prevent content being hidden under the fixed circle card
 function updatePinnedHeight(){
     const card = document.getElementById('circleCard');
-    if(card){
-        // give a small gap
-        document.body.style.paddingTop = (card.offsetHeight + 8) + 'px';
-    }
+    if(card){ document.body.style.paddingTop = (card.offsetHeight + 8) + 'px'; }
 }
 
-// Scoped circle draw + controls so each window can have its own independent canvas and controls
 function drawCircleScoped(root){
     root = root || document;
     const q = (sel)=> root.querySelector(sel);
@@ -1263,15 +1292,13 @@ function drawCircleScoped(root){
     const wVal = (q('#circleWidth')?.value || '').trim();
     const hVal = (q('#circleHeight')?.value || '').trim();
     const filled = !!(q('#circleFilled')?.checked);
-    // fixed pixels-per-block for scoped windows as well
-    const cellSize = 12;
-    const canvas = q('#circleCanvas');
+    const cellSize = 12; const canvas = q('#circleCanvas');
     if(!canvas) return;
     let widthBlocks, heightBlocks;
 
     if(rVal !== ''){
         const r = Math.max(1, Math.round(Number(rVal)));
-        widthBlocks = heightBlocks = r*2 + 1; // include center
+        widthBlocks = heightBlocks = r*2 + 1;
     } else if(wVal !== '' || hVal !== ''){
         widthBlocks = Math.max(1, Math.round(Number(wVal) || 0));
         heightBlocks = Math.max(1, Math.round(Number(hVal) || 0));
@@ -1285,8 +1312,7 @@ function drawCircleScoped(root){
     const baseMarginLeft = 40; const baseMarginTop = 8; const baseMarginRight = 8; const baseMarginBottom = 36;
     const wrap = q('#circleWrap');
     if(wrap) wrap.style.aspectRatio = '1 / 1';
-    let wrapW = wrap ? wrap.clientWidth : 400;
-    let wrapH = wrap ? wrap.clientHeight : 400;
+    let wrapW = wrap ? wrap.clientWidth : 400; let wrapH = wrap ? wrap.clientHeight : 400;
     const baseW = cols * cellSize + baseMarginLeft + baseMarginRight;
     const baseH = rows * cellSize + baseMarginTop + baseMarginBottom;
     const userZoom = Number(q('#circleZoom')?.value) || 1;
@@ -1300,16 +1326,13 @@ function drawCircleScoped(root){
         else { wrap.style.aspectRatio = '1 / 1'; wrapW = wrap.clientWidth; wrapH = wrap.clientHeight; chosenScale = fitScaleSquare; }
     }
     const scale = chosenScale * userZoom;
-    const canvasW = Math.round(baseW * scale);
-    const canvasH = Math.round(baseH * scale);
+    const canvasW = Math.round(baseW * scale); const canvasH = Math.round(baseH * scale);
     canvas.width = canvasW; canvas.height = canvasH;
     canvas.style.width = canvasW + 'px'; canvas.style.height = canvasH + 'px';
     if(wrap){ wrap.style.display='flex'; wrap.style.justifyContent='center'; wrap.style.alignItems='center'; }
     const ctx = canvas.getContext('2d'); ctx.clearRect(0,0,canvas.width,canvas.height);
     const marginLeftBase = Math.round(baseMarginLeft * scale);
     const marginTopBase = Math.round(baseMarginTop * scale);
-    const marginRight = Math.round(baseMarginRight * scale);
-    const marginBottom = Math.round(baseMarginBottom * scale);
     const sCell = cellSize * scale;
 
     root._pan = root._pan || { x:0, y:0, scale: scale, user:false };
@@ -1319,7 +1342,6 @@ function drawCircleScoped(root){
         root._pan.y = root._pan.y * (scale / root._pan.scale);
     }
     panX = root._pan.x || 0; panY = root._pan.y || 0; root._pan.scale = scale;
-    // auto-center unless user panned
     let marginLeft = marginLeftBase + Math.round(panX);
     let marginTop = marginTopBase + Math.round(panY);
     if(!root._pan.user){
@@ -1327,7 +1349,6 @@ function drawCircleScoped(root){
         marginTop = Math.round((canvas.height - rows*sCell)/2);
         root._pan.x = marginLeft - marginLeftBase; root._pan.y = marginTop - marginTopBase;
     }
-    // clamp
     const minLeft = Math.min(0, canvas.width - (cols*sCell + baseMarginLeft + baseMarginRight));
     const maxLeft = Math.max(0, canvas.width - baseMarginLeft - baseMarginRight - cols*sCell);
     const minTop = Math.min(0, canvas.height - (rows*sCell + baseMarginTop + baseMarginBottom));
@@ -1371,7 +1392,7 @@ function drawCircleScoped(root){
     ctx.beginPath(); ctx.moveTo(originX, originY-6*scale); ctx.lineTo(originX, originY+6*scale); ctx.stroke();
 
     ctx.fillStyle = 'white'; ctx.font = Math.max(8, Math.floor(sCell*0.35)) + 'px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline='top';
-    for(let col=0; col<cols; col++){ const gx=col; const tx = marginLeft + col*sCell + sCell/2; const ty = marginTop + rows*sCell + 4; ctx.fillText(gx, tx, ty); }
+    for(let col=0; col<cols; col++){ const tx = marginLeft + col*sCell + sCell/2; const ty = marginTop + rows*sCell + 4; ctx.fillText(col, tx, ty); }
     ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
     for(let row=0; row<rows; row++){ const gz = rows - 1 - row; const ty = marginTop + row*sCell + sCell/2; const tx = marginLeft - 6; ctx.fillText(gz, tx, ty); }
 
@@ -1398,27 +1419,18 @@ function zoomOut(){
 
 function toggleFullscreen(){
     const wrap = document.getElementById('circleWrap');
-    if(!document.fullscreenElement){
-        wrap.requestFullscreen().catch(e => alert('Fullscreen failed: '+e.message));
-    } else {
-        document.exitFullscreen();
-    }
+    if(!document.fullscreenElement){ wrap.requestFullscreen().catch(e => alert('Fullscreen failed: '+e.message)); } 
+    else { document.exitFullscreen(); }
 }
 
 document.addEventListener('fullscreenchange', ()=>{
-    // when entering/exiting fullscreen we should resize the canvas CSS size to fill the wrapper
-    const canvas = document.getElementById('circleCanvas');
-    const wrap = document.getElementById('circleWrap');
-    // redraw using stored params if available
     if(drawCircle._last) drawCircle();
 });
 
-// initial setup: draw once and set pinned height
-// initial setup: keep page layout normal; windows will be created from the sidebar when the user requests them
 window.addEventListener('load', ()=>{
+    generateGradient();
     updatePotionVisual();
     updateSidebarToggleButton();
-    // no automatic windowing on load
 });
 
 function toggleSidebar(){
@@ -1429,15 +1441,11 @@ function toggleSidebar(){
 function updateSidebarToggleButton(){
     const btn = document.getElementById('sidebarToggleBtn');
     if(!btn) return;
-    if(document.body.classList.contains('sidebar-collapsed')){
-        btn.textContent = '☰ Open Sidebar';
-    } else {
-        btn.textContent = '✕ Close sidebar';
-    }
+    if(document.body.classList.contains('sidebar-collapsed')){ btn.textContent = '☰ Open Sidebar'; } 
+    else { btn.textContent = '✕ Close sidebar'; }
 }
 
-/* Windowing system: convert existing .card elements into draggable/resizable windows
-   and populate the left sidebar with buttons to restore/minimize or clone windows. */
+/* Windowing system */
 (function(){
     const container = document.querySelector('.container');
     const prototypes = Array.from(container.querySelectorAll('.card'));
@@ -1445,40 +1453,45 @@ function updateSidebarToggleButton(){
     let zIndexCounter = 2000;
 
     function makeWindow(card, idx, protoId){
-        // create window wrapper
         const win = document.createElement('div');
         win.className = 'window';
-        win.style.left = (220 + idx*20) + 'px';
-        win.style.top = (40 + idx*20) + 'px';
-        win.style.width = card.offsetWidth + 'px';
-        win.style.height = Math.max(120, card.offsetHeight) + 'px';
-    win.dataset.cardName = card.querySelector('h2')?.textContent || ('Calc '+idx);
-    if(protoId) win.dataset.proto = protoId;
+        win.style.left = (220 + idx*20) + 'px'; win.style.top = (40 + idx*20) + 'px';
+        win.style.width = card.offsetWidth + 'px'; win.style.height = Math.max(120, card.offsetHeight) + 'px';
+        win.dataset.cardName = card.querySelector('h2')?.textContent || ('Calc '+idx);
+        if(protoId) win.dataset.proto = protoId;
 
-        // header
         const header = document.createElement('div'); header.className = 'win-header';
         const title = document.createElement('div'); title.className = 'win-title'; title.textContent = win.dataset.cardName;
-    const controls = document.createElement('div'); controls.className = 'win-controls';
-    const minBtn = document.createElement('button'); minBtn.textContent = '_'; minBtn.title='Minimize';
-    controls.appendChild(minBtn);
-        header.appendChild(title); header.appendChild(controls);
+        const controls = document.createElement('div'); controls.className = 'win-controls';
+        const minBtn = document.createElement('button'); minBtn.textContent = '_'; minBtn.title='Minimize';
+        controls.appendChild(minBtn); header.appendChild(title); header.appendChild(controls);
 
         const content = document.createElement('div'); content.className = 'win-content';
-        // move card content into content
         content.appendChild(card);
 
         const resizer = document.createElement('div'); resizer.className = 'resizer';
-
         win.appendChild(header); win.appendChild(content); win.appendChild(resizer);
-    document.body.appendChild(win);
+        document.body.appendChild(win);
 
-    // wire per-window controls: map inline actions to scoped functions
         function wireWindowControls(rootWin){
-            // helper to find inside this window
             const q = (s)=> rootWin.querySelector(s);
-            // circle controls
+            
+            // Connect scoping hooks for newly added gradient tool inputs inside detached layouts
+            if(q('#rgbText')) {
+                const textIn = q('#rgbText'); if(textIn) { textIn.removeAttribute('oninput'); textIn.addEventListener('input', () => generateGradientScoped(rootWin)); }
+                const formatSel = q('#rgbFormat'); if(formatSel) { formatSel.removeAttribute('onchange'); formatSel.addEventListener('change', () => generateGradientScoped(rootWin)); }
+                const col1 = q('#rgbColor1'); if(col1) { col1.removeAttribute('oninput'); col1.addEventListener('input', function() { q('#rgbHex1').value = this.value.toUpperCase(); generateGradientScoped(rootWin); }); }
+                const col2 = q('#rgbColor2'); if(col2) { col2.removeAttribute('oninput'); col2.addEventListener('input', function() { q('#rgbHex2').value = this.value.toUpperCase(); generateGradientScoped(rootWin); }); }
+                const hx1 = q('#rgbHex1'); if(hx1) { hx1.removeAttribute('oninput'); hx1.addEventListener('input', function() { if(this.value.length===7){ q('#rgbColor1').value=this.value; generateGradientScoped(rootWin); } }); }
+                const hx2 = q('#rgbHex2'); if(hx2) { hx2.removeAttribute('oninput'); hx2.addEventListener('input', function() { if(this.value.length===7){ q('#rgbColor2').value=this.value; generateGradientScoped(rootWin); } }); }
+                ['#rgbBold', '#rgbItalic', '#rgbUnderline', '#rgbStrike'].forEach(sel => {
+                    const cb = q(sel); if(cb) { cb.removeAttribute('onchange'); cb.addEventListener('change', () => generateGradientScoped(rootWin)); }
+                });
+                const cpBtn = q("button[onclick*='copyGradientOutput']"); if(cpBtn) { cpBtn.removeAttribute('onclick'); cpBtn.addEventListener('click', () => copyGradientOutputScoped(rootWin)); }
+                generateGradientScoped(rootWin);
+            }
+
             if(q('#circleCanvas')){
-                // draw button -> drawCircleScoped
                 const drawBtn = rootWin.querySelector("button[onclick*='drawCircle']");
                 if(drawBtn){ drawBtn.removeAttribute('onclick'); drawBtn.addEventListener('click', ()=>drawCircleScoped(rootWin)); }
                 const zoomInBtn = rootWin.querySelector("button[onclick*='zoomIn']"); if(zoomInBtn){ zoomInBtn.removeAttribute('onclick'); zoomInBtn.addEventListener('click', ()=>zoomInScoped(rootWin)); }
@@ -1486,37 +1499,25 @@ function updateSidebarToggleButton(){
                 const fsBtn = rootWin.querySelector("#circleFullscreen"); if(fsBtn){ fsBtn.removeAttribute('onclick'); fsBtn.addEventListener('click', ()=>toggleFullscreenScoped(rootWin)); }
                 const zoomRange = q('#circleZoom'); if(zoomRange){ zoomRange.removeAttribute('oninput'); zoomRange.addEventListener('input', ()=>onZoomChangeScoped(rootWin)); }
 
-                // panning for this canvas
                 const canvasEl = q('#circleCanvas');
                 (function(){
-                    let isP=false, lx=0, ly=0;
-                    canvasEl.style.cursor='grab';
+                    let isP=false, lx=0, ly=0; canvasEl.style.cursor='grab';
                     canvasEl.addEventListener('mousedown',(e)=>{ isP=true; lx=e.clientX; ly=e.clientY; canvasEl.style.cursor='grabbing'; rootWin._pan = rootWin._pan || {x:0,y:0,scale:1,user:false}; rootWin._pan.user = true; });
                     window.addEventListener('mousemove',(e)=>{ if(!isP) return; const dx = e.clientX - lx; const dy = e.clientY - ly; lx=e.clientX; ly=e.clientY; rootWin._pan = rootWin._pan || {x:0,y:0,scale:1,user:false}; rootWin._pan.x += dx; rootWin._pan.y += dy; rootWin._pan.user = true; drawCircleScoped(rootWin); });
                     window.addEventListener('mouseup',()=>{ if(!isP) return; isP=false; canvasEl.style.cursor='grab'; });
-                    canvasEl.addEventListener('touchstart',(e)=>{ if(e.touches.length!==1) return; isP=true; lx=e.touches[0].clientX; ly=e.touches[0].clientY; rootWin._pan = rootWin._pan || {x:0,y:0,scale:1,user:false}; rootWin._pan.user = true; }, {passive:true});
-                    canvasEl.addEventListener('touchmove',(e)=>{ if(!isP || e.touches.length!==1) return; const dx = e.touches[0].clientX - lx; const dy = e.touches[0].clientY - ly; lx=e.touches[0].clientX; ly=e.touches[0].clientY; rootWin._pan = rootWin._pan || {x:0,y:0,scale:1,user:false}; rootWin._pan.x += dx; rootWin._pan.y += dy; rootWin._pan.user = true; drawCircleScoped(rootWin); }, {passive:true});
-                    canvasEl.addEventListener('touchend',()=>{ isP=false; });
-                    canvasEl.addEventListener('dblclick',()=>{ rootWin._pan = {x:0,y:0,scale: rootWin._pan ? rootWin._pan.scale : 1, user:false}; drawCircleScoped(rootWin); });
                 })();
             }
 
-            // whitelist controls
             if(q('#wlList')){
-                const genBtn = rootWin.querySelector("button[onclick*='generateWhitelist']");
-                if(genBtn){ genBtn.removeAttribute('onclick'); genBtn.addEventListener('click', ()=>generateWhitelistScoped(rootWin)); }
-                const prevBtn = rootWin.querySelector("button[onclick*='previewWhitelist']");
-                if(prevBtn){ prevBtn.removeAttribute('onclick'); prevBtn.addEventListener('click', ()=>previewWhitelistScoped(rootWin)); }
-                const copyBtn = rootWin.querySelector("button[onclick*='copyWhitelist']");
-                if(copyBtn){ copyBtn.removeAttribute('onclick'); copyBtn.addEventListener('click', ()=>copyWhitelistScoped(rootWin)); }
+                const genBtn = rootWin.querySelector("button[onclick*='generateWhitelist']"); if(genBtn){ genBtn.removeAttribute('onclick'); genBtn.addEventListener('click', ()=>generateWhitelistScoped(rootWin)); }
+                const prevBtn = rootWin.querySelector("button[onclick*='previewWhitelist']"); if(prevBtn){ prevBtn.removeAttribute('onclick'); prevBtn.addEventListener('click', ()=>previewWhitelistScoped(rootWin)); }
+                const copyBtn = rootWin.querySelector("button[onclick*='copyWhitelist']"); if(copyBtn){ copyBtn.removeAttribute('onclick'); copyBtn.addEventListener('click', ()=>copyWhitelistScoped(rootWin)); }
             }
 
-            // map other calculators' buttons to scoped functions
             const netherBtn = rootWin.querySelector("button[onclick*='nether']"); if(netherBtn){ netherBtn.removeAttribute('onclick'); netherBtn.addEventListener('click', ()=>netherScoped(rootWin)); }
             const overworldBtn = rootWin.querySelector("button[onclick*='overworld']"); if(overworldBtn){ overworldBtn.removeAttribute('onclick'); overworldBtn.addEventListener('click', ()=>overworldScoped(rootWin)); }
             const chunkBtn = rootWin.querySelector("button[onclick*='chunk']"); if(chunkBtn){ chunkBtn.removeAttribute('onclick'); chunkBtn.addEventListener('click', ()=>chunkScoped(rootWin)); }
-                    const xpBtn = rootWin.querySelector("button[onclick*='xp']"); if(xpBtn){ xpBtn.removeAttribute('onclick'); xpBtn.addEventListener('click', ()=>xpScoped(rootWin)); }
-            const readBtn = rootWin.querySelector("button[onclick*='readLitematic']"); if(readBtn){ readBtn.removeAttribute('onclick'); readBtn.addEventListener('click', ()=>readLitematicScoped(rootWin)); }
+            const xpBtn = rootWin.querySelector("button[onclick*='xp']"); if(xpBtn){ xpBtn.removeAttribute('onclick'); xpBtn.addEventListener('click', ()=>xpScoped(rootWin)); }
             const ticksBtn = rootWin.querySelector("button[onclick*='ticksToSeconds']"); if(ticksBtn){ ticksBtn.removeAttribute('onclick'); ticksBtn.addEventListener('click', ()=>ticksToSecondsScoped(rootWin)); }
             const secsBtn = rootWin.querySelector("button[onclick*='secondsToTicks']"); if(secsBtn){ secsBtn.removeAttribute('onclick'); secsBtn.addEventListener('click', ()=>secondsToTicksScoped(rootWin)); }
             const hopperBtn = rootWin.querySelector("button[onclick*='hopperToSeconds']"); if(hopperBtn){ hopperBtn.removeAttribute('onclick'); hopperBtn.addEventListener('click', ()=>hopperToSecondsScoped(rootWin)); }
@@ -1525,59 +1526,25 @@ function updateSidebarToggleButton(){
             const enchantBtn = rootWin.querySelector("button[onclick*='planEnchantments']"); if(enchantBtn){ enchantBtn.removeAttribute('onclick'); enchantBtn.addEventListener('click', ()=>planEnchantmentsScoped(rootWin)); }
             const copyEnchantBtn = rootWin.querySelector("button[onclick*='copyEnchantPlan']"); if(copyEnchantBtn){ copyEnchantBtn.removeAttribute('onclick'); copyEnchantBtn.addEventListener('click', ()=>copyEnchantPlanScoped(rootWin)); }
             const potionBtn = rootWin.querySelector("button[onclick*='generatePotionRecipe']"); if(potionBtn){ potionBtn.removeAttribute('onclick'); potionBtn.addEventListener('click', ()=>generatePotionRecipeScoped(rootWin)); }
-            const potionSelect = rootWin.querySelector('#potionType');
-            if(potionSelect){ potionSelect.removeAttribute('onchange'); potionSelect.addEventListener('change', ()=>updatePotionVisual(rootWin)); updatePotionVisual(rootWin); }
+            const potionSelect = rootWin.querySelector('#potionType'); if(potionSelect){ potionSelect.removeAttribute('onchange'); potionSelect.addEventListener('change', ()=>updatePotionVisual(rootWin)); updatePotionVisual(rootWin); }
             const beaconBtn = rootWin.querySelector("button[onclick*='beaconColorLookup']"); if(beaconBtn){ beaconBtn.removeAttribute('onclick'); beaconBtn.addEventListener('click', ()=>beaconColorLookupScoped(rootWin)); }
             const beaconComboBtn = rootWin.querySelector("button[onclick*='beaconColorComboLookup']"); if(beaconComboBtn){ beaconComboBtn.removeAttribute('onclick'); beaconComboBtn.addEventListener('click', ()=>beaconColorComboLookupScoped(rootWin)); }
         }
-        // wire the controls for this window (original card)
         wireWindowControls(win);
 
-        // events: bring to front
         win.addEventListener('mousedown', ()=>{ win.style.zIndex = ++zIndexCounter; });
+        minBtn.addEventListener('click', ()=>{ win.style.display = 'none'; });
 
-        // minimize
-        minBtn.addEventListener('click', ()=>{
-            win.style.display = 'none';
-            // update sidebar label if present
-            const sb = document.querySelector(`[data-proto='${win.dataset.proto}']`);
-            if(sb) sb.textContent = win.dataset.cardName + ' (min)';
-        });
-
-        // dragging
         let dragging=false, dragStartX=0, dragStartY=0, startLeft=0, startTop=0;
-        header.addEventListener('mousedown', (e)=>{
-            dragging = true; dragStartX = e.clientX; dragStartY = e.clientY;
-            startLeft = parseInt(win.style.left,10) || 0; startTop = parseInt(win.style.top,10) || 0;
-            win.style.zIndex = ++zIndexCounter;
-            document.body.style.userSelect = 'none';
-        });
-        window.addEventListener('mousemove',(e)=>{
-            if(!dragging) return;
-            const dx = e.clientX - dragStartX; const dy = e.clientY - dragStartY;
-            win.style.left = (startLeft + dx) + 'px'; win.style.top = (startTop + dy) + 'px';
-        });
+        header.addEventListener('mousedown', (e)=>{ dragging = true; dragStartX = e.clientX; dragStartY = e.clientY; startLeft = parseInt(win.style.left,10)||0; startTop = parseInt(win.style.top,10)||0; win.style.zIndex = ++zIndexCounter; document.body.style.userSelect = 'none'; });
+        window.addEventListener('mousemove',(e)=>{ if(!dragging) return; win.style.left = (startLeft + (e.clientX - dragStartX)) + 'px'; win.style.top = (startTop + (e.clientY - dragStartY)) + 'px'; });
         window.addEventListener('mouseup', ()=>{ dragging=false; document.body.style.userSelect='auto'; });
 
-        // resizing
         let resizing=false, resStartX=0, resStartY=0, startW=0, startH=0;
-        resizer.addEventListener('mousedown',(e)=>{
-            resizing=true; resStartX=e.clientX; resStartY=e.clientY; startW=win.offsetWidth; startH=win.offsetHeight;
-            document.body.style.userSelect='none';
-            e.stopPropagation();
-        });
-        window.addEventListener('mousemove',(e)=>{
-            if(!resizing) return;
-            const nx = Math.max(200, startW + (e.clientX - resStartX));
-            const ny = Math.max(80, startH + (e.clientY - resStartY));
-            win.style.width = nx + 'px'; win.style.height = ny + 'px';
-            // if the window contains the circle canvas, adjust the internal wrapper
-            const wrap = win.querySelector('#circleWrap');
-            if(wrap){ wrap.style.width = (nx - 40) + 'px'; wrap.style.height = (ny - 90) + 'px'; drawCircleScoped(win); }
-        });
+        resizer.addEventListener('mousedown',(e)=>{ resizing=true; resStartX=e.clientX; resStartY=e.clientY; startW=win.offsetWidth; startH=win.offsetHeight; document.body.style.userSelect='none'; e.stopPropagation(); });
+        window.addEventListener('mousemove',(e)=>{ if(!resizing) return; const nx = Math.max(200, startW + (e.clientX - resStartX)); const ny = Math.max(80, startH + (e.clientY - resStartY)); win.style.width = nx + 'px'; win.style.height = ny + 'px'; const wrap = win.querySelector('#circleWrap'); if(wrap){ wrap.style.width = (nx - 40) + 'px'; wrap.style.height = (ny - 90) + 'px'; drawCircleScoped(win); } });
         window.addEventListener('mouseup', ()=>{ resizing=false; document.body.style.userSelect='auto'; });
 
-        // store an id for sidebar linking
         win._id = 'win' + Math.random().toString(36).slice(2,9);
         return win;
     }
@@ -1600,11 +1567,7 @@ function updateSidebarToggleButton(){
             sidebarList.appendChild(btn);
         });
     }
-
-    // populate sidebar with prototypes (no auto-convert)
-    prototypes.forEach((proto, i)=>{});
     updateSidebar();
-
 })();
 
 </script>
@@ -1612,3 +1575,5 @@ function updateSidebarToggleButton(){
 </body>
 
 </html>
+
+```
