@@ -920,9 +920,7 @@ async function lookupUuidsScoped(root){
 
         try {
             const services = [
-                `https://api.mojang.com/users/profiles/minecraft/${encodeURIComponent(name)}`,
-                `https://playerdb.co/api/player/minecraft/${encodeURIComponent(name)}`,
-                `https://api.ashcon.app/mojang/v2/user/${encodeURIComponent(name)}`
+    `https://playerdb.co/api/player/minecraft/${encodeURIComponent(name)}`
             ];
 
             for(const url of services){
